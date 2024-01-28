@@ -1,5 +1,5 @@
 # pyrebel
-<h3>On Jetson Nano</h3>
+# On Jetson Nano
 Usage:
 ```python3 pynvrebel.py <filename.png> ```<br>
 For example, 
