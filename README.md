@@ -5,7 +5,7 @@ Usage:
 For example, 
 ```python3 pynvrebel.py letters.png```<br>
 
-The expected input files are grayscale images of figures like <a href="https://github.com/ps-nithin/pyrebel/blob/main/letters.png">letters.png</a>
+The expected input files are grayscale images of figures like <a href="https://github.com/ps-nithin/pyrebel/blob/main/letters.png">letters.png</a><br>
 Running the above program will open a window showing the abstract points in the input image file as white points.
 
 # Read more about the logic implemented <a href="https://github.com/ps-nithin/pyrebel/blob/main/abstract.pdf">here</a>
