@@ -13,3 +13,4 @@ Running the above program will open an image showing the abstract pixels in the 
 
 # Read more about the logic implemented <a href="https://github.com/ps-nithin/pyrebel/blob/main/abstract.pdf">here</a>
 
+# Let the data shine!
