@@ -371,7 +371,8 @@ def get_bound_data_order(nz_a_max_dist,nz_s,tmp_img,init_bound_abstract,bound_da
         x=index%tmp_img.shape[1]
         y2=int(index2/tmp_img.shape[1])
         x2=index2%tmp_img.shape[1]
-        threshold=sqrt(float(pow(y2-y,2)+pow(x2-x,2)))/16
+        threshold_ratio=16
+        threshold=sqrt(float(pow(y2-y,2)+pow(x2-x,2)))/threshold_ratio
         r=y
         c=x
         color=tmp_img[r][c]
