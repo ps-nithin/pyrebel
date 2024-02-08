@@ -38,6 +38,8 @@ from PIL import Image
 input = videoSource("csi://0", options={'width':320,'height':240,'framerate':30,'flipMethod':'rotate-270'})
 output = videoOutput("", argv=sys.argv)
 
+out_loc="output.png"
+
 # process frames until EOS or the user exits
 def main():
     n=0
@@ -166,12 +168,12 @@ def main():
         draw_pixels_from_indices_cuda(nz_ba_d,bound_data_ordered_d,255,out_image_d)
         
         out_image_h=out_image_d.copy_to_host()
-        #done=new_image(scaled_shape)
-        #write_image(out_loc,done)
         #img_boundary_h=img_boundary_d.copy_to_host()
         #print(img_boundary_h)
         img_boundary_cuda=cudaFromNumpy(out_image_h)
         img_boundary_cuda_rgb=convert_color(img_boundary_cuda,'rgb8')
+        output_png=cudaToNumpy(img_boundary_cuda_rgb)
+        write_image(out_loc,output_png)
         # render the image
         output.Render(img_boundary_cuda_rgb)
         # exit on input/output EOS
@@ -179,8 +181,6 @@ def main():
         #    break
         n+=1
         print("Finished in total of",time.time()-init_time,"seconds at",float(1/(time.time()-init_time)),"fps count=",n)
-        #im=Image.fromarray(out_image_h).convert('L')
-        #im.save("cuda_scaled.png")
 
 def main2():
     a=np.zeros(3000000,dtype=np.int64)
@@ -778,6 +778,9 @@ def draw_pixels_from_indices_cuda_(indices,pixels,i,img):
         r=int(pixels[indices[cc]]/img.shape[1])
         c=pixels[indices[cc]]%img.shape[1]
         img[r][c]=i
+
+def write_image(fname,image):
+    Image.fromarray(image).save(fname)
 
 def open_image(fname):
     """returns the image as numpy array"""
