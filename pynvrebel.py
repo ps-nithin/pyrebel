@@ -106,6 +106,7 @@ def main():
         s=binfo.transpose()[1]
         nz_a=get_non_zeros(a)
         nz_s=get_non_zeros(s)
+        print("len(nz_s)=",len(nz_s))
         #nz=np.column_stack((nz_a,nz_s))
         #nz_sort=nz[nz[:,1].argsort()]
         nz_s_cum_=np.cumsum(nz_s)
@@ -139,18 +140,23 @@ def main():
         bound_abstract=np.zeros([nz_si_cum_[-1]],dtype=np.int)
         bound_abstract_d=cuda.to_device(bound_abstract)
         bound_threshold=np.zeros([nz_si_cum_[-1]],dtype=np.float64)
+        bound_mark_d=cuda.device_array([nz_si_cum_[-1]],dtype=np.int)
         bound_threshold_d=cuda.to_device(bound_threshold)
-        get_bound_data_order[math.ceil(len(nz_a)/256),256](max_dist_d,nz_si_cum_d,img_boundary_d,bound_abstract_d,bound_data_ordered_d,bound_threshold_d)
+        ba_size=np.zeros([nz_si_cum_[-1]],dtype=np.int)
+        ba_size_d=cuda.to_device(ba_size)
+        get_bound_data_order[math.ceil(len(nz_a)/256),256](max_dist_d,nz_si_cum_d,img_boundary_d,bound_abstract_d,bound_data_ordered_d,bound_threshold_d,bound_mark_d,ba_size_d)
         cuda.synchronize()
+
         bound_threshold_h=bound_threshold_d.copy_to_host()
         bound_abstract_h=bound_abstract_d.copy_to_host()
         nz_ba_h=get_non_zeros(bound_abstract_h)
         nz_ba_d=cuda.to_device(nz_ba_h)
+        nz_ba_init_d=nz_ba_d
         nz_ba_pre_size=len(nz_ba_h)
         max_pd_h=np.zeros([1],np.float64)
         max_pd_d=cuda.to_device(max_pd_h)
         while 1:
-            find_detail[len(nz_ba_h),1](nz_ba_d,bound_threshold_d,bound_abstract_d,bound_data_ordered_d,max_pd_d,scaled_shape_d)
+            find_detail[len(nz_ba_h),1](nz_ba_d,bound_threshold_d,bound_abstract_d,bound_data_ordered_d,max_pd_d,scaled_shape_d,bound_mark_d,ba_size_d)
             cuda.synchronize()
             bound_abstract_h=bound_abstract_d.copy_to_host()
             nz_ba_h=get_non_zeros(bound_abstract_h)
@@ -158,6 +164,12 @@ def main():
             if len(nz_ba_h)==nz_ba_pre_size:
                 break
             nz_ba_pre_size=len(nz_ba_h)
+        
+        #ba_change_d=cuda.device_array([len(nz_ba)-len(nz_a)],dtype=np.int)
+        ba_size_h=ba_size_d.copy_to_host()
+        nz_ba_size=get_non_zeros(ba_size_h)
+        print(nz_ba_size)
+        print(len(nz_ba_h))
 
         out_image=np.zeros(scaled_shape,dtype=np.int)
         out_image_d=cuda.to_device(out_image)
@@ -190,7 +202,7 @@ def main2():
     print(nz)
 
 @cuda.jit
-def find_detail(nz_ba_d,bound_threshold_d,bound_abstract_d,bound_data_ordered_d,max_pd_d,scaled_shape):
+def find_detail(nz_ba_d,bound_threshold_d,bound_abstract_d,bound_data_ordered_d,max_pd_d,scaled_shape,bound_mark_d,ba_size_d):
     ci=cuda.grid(1)
     if ci<len(nz_ba_d)-1:
         a=bound_data_ordered_d[nz_ba_d[ci]-1]
@@ -201,13 +213,13 @@ def find_detail(nz_ba_d,bound_threshold_d,bound_abstract_d,bound_data_ordered_d,
         b1=b%scaled_shape[1]
         threshold=bound_threshold_d[nz_ba_d[ci]]
         #threshold=cmath.sqrt(float(pow(b0-a0,2)+pow(b1-a1,2))).real/8
-        n=nz_ba_d[ci]+1
+        n=nz_ba_d[ci]
         pd_max=0.0
         pd_max_i=n
         while 1:
             if n==nz_ba_d[ci+1]:
                 break
-            c=bound_data_ordered_d[n-1]
+            c=bound_data_ordered_d[n]
             c0=int(c/scaled_shape[1])
             c1=c%scaled_shape[1]
             pd=abs((a1-b1)*(a0-c0)-(a0-b0)*(a1-c1))/cmath.sqrt(pow(a1-b1,2)+pow(a0-b0,2)).real
@@ -216,13 +228,18 @@ def find_detail(nz_ba_d,bound_threshold_d,bound_abstract_d,bound_data_ordered_d,
                 pd_max=pd
                 pd_max_i=n
             n+=1
+        """
+        cuda.syncthreads()
         cuda.atomic.max(max_pd_d,0,pd_max)
         cuda.syncthreads()
         if max_pd_d[0]==pd_max and pd_max>threshold:
             bound_abstract_d[pd_max_i]=pd_max_i
         max_pd_d[0]=0.0
-
-
+        """
+        if pd_max>threshold:
+            bound_abstract_d[pd_max_i]=pd_max_i
+            seed_=bound_mark_d[nz_ba_d[ci]-1]
+            ba_size_d[seed_]+=1
 
 
 @cuda.jit
@@ -362,7 +379,7 @@ def get_dist_data_init(bound_data_d,tmp_img,dist_data_d):
         dist_data_d[ci]=d_max
 
 @cuda.jit
-def get_bound_data_order(nz_a_max_dist,nz_s,tmp_img,init_bound_abstract,bound_data_order_d,bound_threshold_d):
+def get_bound_data_order(nz_a_max_dist,nz_s,tmp_img,init_bound_abstract,bound_data_order_d,bound_threshold_d,bound_mark_d,ba_size_d):
     ci=cuda.grid(1)
     if ci<len(nz_a_max_dist):
         index=nz_a_max_dist[ci][0]
@@ -371,14 +388,17 @@ def get_bound_data_order(nz_a_max_dist,nz_s,tmp_img,init_bound_abstract,bound_da
         x=index%tmp_img.shape[1]
         y2=int(index2/tmp_img.shape[1])
         x2=index2%tmp_img.shape[1]
-        threshold_ratio=16
+        threshold_ratio=32
         threshold=sqrt(float(pow(y2-y,2)+pow(x2-x,2)))/threshold_ratio
         r=y
         c=x
         color=tmp_img[r][c]
         n=nz_s[ci]
+        init_n=n+1
         init_bound_abstract[n]=n+1
         bound_threshold_d[n]=threshold
+        bound_mark_d[n]=init_n
+        ba_size_d[init_n]+=1
         bound_data_order_d[n]=r*tmp_img.shape[1]+c
         last=-1
         if tmp_img[r-1][c]==color:
@@ -398,13 +418,17 @@ def get_bound_data_order(nz_a_max_dist,nz_s,tmp_img,init_bound_abstract,bound_da
                 bound_data_order_d[n+1]=y*tmp_img.shape[1]+x
                 init_bound_abstract[n+1]=n+2
                 bound_threshold_d[n+1]=threshold
+                bound_mark_d[n+1]=init_n
+                ba_size_d[init_n]+=1
                 break
             n+=1
             bound_data_order_d[n]=r*tmp_img.shape[1]+c
             bound_threshold_d[n]=threshold
+            bound_mark_d[n]=init_n
 
             if y2==r and x2==c:
                 init_bound_abstract[n]=n+1
+                ba_size_d[init_n]+=1
                 
             if tmp_img[r-1][c]==color and last!=0:
                 r-=1
