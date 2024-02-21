@@ -228,18 +228,12 @@ def find_detail(nz_ba_d,bound_threshold_d,bound_abstract_d,bound_data_ordered_d,
                 pd_max=pd
                 pd_max_i=n
             n+=1
-        """
         cuda.syncthreads()
-        cuda.atomic.max(max_pd_d,0,pd_max)
-        cuda.syncthreads()
-        if max_pd_d[0]==pd_max and pd_max>threshold:
-            bound_abstract_d[pd_max_i]=pd_max_i
-        max_pd_d[0]=0.0
-        """
         if pd_max>threshold:
             bound_abstract_d[pd_max_i]=pd_max_i
             seed_=bound_mark_d[nz_ba_d[ci]-1]
-            ba_size_d[seed_]+=1
+            #ba_size_d[seed_]+=1
+            cuda.atomic.add(ba_size_d,seed_,1)
 
 
 @cuda.jit
@@ -398,7 +392,7 @@ def get_bound_data_order(nz_a_max_dist,nz_s,tmp_img,init_bound_abstract,bound_da
         init_bound_abstract[n]=n+1
         bound_threshold_d[n]=threshold
         bound_mark_d[n]=init_n
-        ba_size_d[init_n]+=1
+        cuda.atomic.add(ba_size_d,init_n,1)
         bound_data_order_d[n]=r*tmp_img.shape[1]+c
         last=-1
         if tmp_img[r-1][c]==color:
@@ -419,7 +413,7 @@ def get_bound_data_order(nz_a_max_dist,nz_s,tmp_img,init_bound_abstract,bound_da
                 init_bound_abstract[n+1]=n+2
                 bound_threshold_d[n+1]=threshold
                 bound_mark_d[n+1]=init_n
-                ba_size_d[init_n]+=1
+                cuda.atomic.add(ba_size_d,init_n,1)
                 break
             n+=1
             bound_data_order_d[n]=r*tmp_img.shape[1]+c
@@ -428,7 +422,7 @@ def get_bound_data_order(nz_a_max_dist,nz_s,tmp_img,init_bound_abstract,bound_da
 
             if y2==r and x2==c:
                 init_bound_abstract[n]=n+1
-                ba_size_d[init_n]+=1
+                cuda.atomic.add(ba_size_d,init_n,1)
                 
             if tmp_img[r-1][c]==color and last!=0:
                 r-=1
