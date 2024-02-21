@@ -34,19 +34,30 @@ import numpy as np
 import cmath
 from PIL import Image
 
+
+parser=argparse.ArgumentParser()
+parser.add_argument("-i","--input",help="Input file name. Defaults to camera stream.")
+parser.add_argument("-t","--threshold",type=int,help="Threshold. Higher number gives higher resolution.")
+parser.add_argument("-ba","--bound_abstract_index",type=int,help="Selects the bound abstract.")
+parser.add_argument("-o","--output",help="Output filename.")
+
+
+
 # create video sources & outputs
 input = videoSource("csi://0", options={'width':320,'height':240,'framerate':30,'flipMethod':'rotate-270'})
 output = videoOutput("", argv=sys.argv)
 
-out_loc="output.png"
 
 # process frames until EOS or the user exits
 def main():
     n=0
+    args=parser.parse_args()
     while True:
         start_time=time.time()
         init_time=time.time()
-        if len(sys.argv)==1:
+        if args.input:
+            img_array=open_image(args.input).astype('int')
+        else:
             # capture the next image
             img = input.Capture()
             if img is None: # timeout
@@ -55,10 +66,21 @@ def main():
             img_array=cudaToNumpy(img_gray)
             cudaDeviceSynchronize()
             img_array=img_array.reshape(1,img_array.shape[0],img_array.shape[1])[0].astype('int')
-        else:
-            img_array=open_image(sys.argv[1]).astype('int')
-
         
+        if args.threshold:
+            thresh=args.threshold
+        else:
+            thresh=32
+        if args.bound_abstract_index:
+            ba_index=args.bound_abstract_index
+        else:
+            ba_index=0
+        
+        if args.output:
+            out_loc=args.output
+        else:
+            out_loc="output.png"
+
         """
         img_array=np.full([5,5],0,dtype=np.int)
         img_array[1][2]=5
@@ -144,7 +166,7 @@ def main():
         bound_threshold_d=cuda.to_device(bound_threshold)
         ba_size=np.zeros([nz_si_cum_[-1]],dtype=np.int)
         ba_size_d=cuda.to_device(ba_size)
-        get_bound_data_order[math.ceil(len(nz_a)/256),256](max_dist_d,nz_si_cum_d,img_boundary_d,bound_abstract_d,bound_data_ordered_d,bound_threshold_d,bound_mark_d,ba_size_d)
+        get_bound_data_order[math.ceil(len(nz_a)/256),256](max_dist_d,nz_si_cum_d,img_boundary_d,bound_abstract_d,bound_data_ordered_d,bound_threshold_d,bound_mark_d,ba_size_d,thresh)
         cuda.synchronize()
 
         bound_threshold_h=bound_threshold_d.copy_to_host()
@@ -168,17 +190,33 @@ def main():
         #ba_change_d=cuda.device_array([len(nz_ba)-len(nz_a)],dtype=np.int)
         ba_size_h=ba_size_d.copy_to_host()
         nz_ba_size=get_non_zeros(ba_size_h)
-        print(nz_ba_size)
-        print(len(nz_ba_h))
+        nz_ba_size_cum_=np.cumsum(nz_ba_size)
+        nz_ba_size_cum=np.delete(np.insert(nz_ba_size_cum_,0,0),-1)
+        
+        decrement_by_one[len(nz_ba_h),1](nz_ba_d)
+        cuda.synchronize()
+        nz_ba_h=nz_ba_d.copy_to_host()
 
         out_image=np.zeros(scaled_shape,dtype=np.int)
         out_image_d=cuda.to_device(out_image)
-        
-        
+
+        print(nz_ba_size)
+        print(len(nz_ba_h))
+    
+        select_ba=nz_ba_h[nz_ba_size_cum[ba_index]:nz_ba_size_cum[ba_index+1]]
+        print(select_ba)
+        select_ba_d=cuda.to_device(select_ba)
+        draw_pixels_cuda(bound_data_ordered_d,100,out_image_d)
+        decrement_by_one[len(nz_ba_h),1](nz_ba_d)
+        draw_pixels_from_indices_cuda(select_ba_d,bound_data_ordered_d,255,out_image_d)
+
+                
+        """
         draw_pixels_cuda(bound_data_ordered_d,100,out_image_d)
         decrement_by_one[len(nz_ba_h),1](nz_ba_d)
         draw_pixels_from_indices_cuda(nz_ba_d,bound_data_ordered_d,255,out_image_d)
-        
+        """
+
         out_image_h=out_image_d.copy_to_host()
         #img_boundary_h=img_boundary_d.copy_to_host()
         #print(img_boundary_h)
@@ -193,6 +231,7 @@ def main():
         #    break
         n+=1
         print("Finished in total of",time.time()-init_time,"seconds at",float(1/(time.time()-init_time)),"fps count=",n)
+
 
 def main2():
     a=np.zeros(3000000,dtype=np.int64)
@@ -373,7 +412,7 @@ def get_dist_data_init(bound_data_d,tmp_img,dist_data_d):
         dist_data_d[ci]=d_max
 
 @cuda.jit
-def get_bound_data_order(nz_a_max_dist,nz_s,tmp_img,init_bound_abstract,bound_data_order_d,bound_threshold_d,bound_mark_d,ba_size_d):
+def get_bound_data_order(nz_a_max_dist,nz_s,tmp_img,init_bound_abstract,bound_data_order_d,bound_threshold_d,bound_mark_d,ba_size_d,threshold_in):
     ci=cuda.grid(1)
     if ci<len(nz_a_max_dist):
         index=nz_a_max_dist[ci][0]
@@ -382,7 +421,7 @@ def get_bound_data_order(nz_a_max_dist,nz_s,tmp_img,init_bound_abstract,bound_da
         x=index%tmp_img.shape[1]
         y2=int(index2/tmp_img.shape[1])
         x2=index2%tmp_img.shape[1]
-        threshold_ratio=32
+        threshold_ratio=threshold_in
         threshold=sqrt(float(pow(y2-y,2)+pow(x2-x,2)))/threshold_ratio
         r=y
         c=x
