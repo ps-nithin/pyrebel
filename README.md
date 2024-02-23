@@ -1,8 +1,8 @@
 # pyrebel
 # On Jetson Nano
-Usage:
+Usage:<br>
 ```python3 pynvrebel.py --input <filename.png> --threshold <threshold value> --output <output filename>```<br>
-For example, 
+For example,<br>
 ```python3 pynvrebel.py --input letters.png --threshold 32```<br>
 
 The expected input files are grayscale images of figures like <a href="https://github.com/ps-nithin/pyrebel/blob/main/letters.png">letters.png</a><br>
