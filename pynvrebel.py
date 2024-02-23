@@ -144,8 +144,6 @@ def main():
         nz_si_cum=np.delete(np.insert(nz_si_cum_,0,0),-1)
         nz_si_cum_d=cuda.to_device(nz_si_cum)
 
-        print("len(bound_data_d)=",nz_s_cum_[-1])
-        print("len(bound_data_order_d)=",nz_si_cum_[-1])
         bound_data_d=cuda.device_array([nz_s_cum_[-1]],dtype=np.int)
         get_bound_data_init[math.ceil(len(nz_a)/256),256](nz_a_d,nz_s_cum_d,img_boundary_d,bound_data_d)
         cuda.synchronize()
@@ -190,21 +188,28 @@ def main():
         #ba_change_d=cuda.device_array([len(nz_ba)-len(nz_a)],dtype=np.int)
         ba_size_h=ba_size_d.copy_to_host()
         nz_ba_size=get_non_zeros(ba_size_h)
+        nz_ba_size_d=cuda.to_device(nz_ba_size)
         nz_ba_size_cum_=np.cumsum(nz_ba_size)
         nz_ba_size_cum=np.delete(np.insert(nz_ba_size_cum_,0,0),-1)
+        nz_ba_size_cum_d=cuda.to_device(nz_ba_size_cum)
         
+        ba_change=np.zeros([len(nz_ba_h)],dtype=np.float64)
+        ba_change_d=cuda.to_device(ba_change)
+
         decrement_by_one[len(nz_ba_h),1](nz_ba_d)
         cuda.synchronize()
         nz_ba_h=nz_ba_d.copy_to_host()
-
+        find_change[math.ceil(len(nz_ba_h)/256),256](nz_ba_size_d,nz_ba_size_cum_d,nz_ba_d,bound_data_ordered_d,scaled_shape_d,ba_change_d)
+        cuda.synchronize()
+        ba_change_h=ba_change_d.copy_to_host()
+        
         out_image=np.zeros(scaled_shape,dtype=np.int)
         out_image_d=cuda.to_device(out_image)
-
+        
         print(nz_ba_size)
-        print(len(nz_ba_h))
-    
         select_ba=nz_ba_h[nz_ba_size_cum[ba_index]:nz_ba_size_cum[ba_index+1]]
-        print(select_ba)
+        select_ba_change=ba_change_h[nz_ba_size_cum[ba_index]:nz_ba_size_cum[ba_index+1]]
+        print(select_ba_change)
         select_ba_d=cuda.to_device(select_ba)
         draw_pixels_cuda(bound_data_ordered_d,100,out_image_d)
         decrement_by_one[len(nz_ba_h),1](nz_ba_d)
@@ -231,14 +236,61 @@ def main():
         #    break
         n+=1
         print("Finished in total of",time.time()-init_time,"seconds at",float(1/(time.time()-init_time)),"fps count=",n)
+        break
+
+@cuda.jit
+def find_change(nz_ba_size_d,nz_ba_size_cum_d,nz_ba_d,bound_data_ordered_d,scaled_shape,ba_change_d):
+    ci=cuda.grid(1)
+    if ci<len(nz_ba_size_d):
+        n=nz_ba_size_cum_d[ci]
+        s=nz_ba_size_d[ci]-2
+        a=bound_data_ordered_d[nz_ba_d[n+s]]
+        b=bound_data_ordered_d[nz_ba_d[n]]
+        c=bound_data_ordered_d[nz_ba_d[n+1]]
+        a0=int(a/scaled_shape[1])
+        a1=a%scaled_shape[1]
+        b0=int(b/scaled_shape[1])
+        b1=b%scaled_shape[1]
+        c0=int(c/scaled_shape[1])
+        c1=c%scaled_shape[1]
+            
+        angle_pre=math.atan2(np.float64(a1-b1),np.float64(a0-b0))*180/math.pi
+        angle_cur=math.atan2(np.float64(b1-c1),np.float64(b0-c0))*180/math.pi
+        diff=angle_diff(angle_pre,angle_cur)
+        ba_change_d[n]=diff
+
+        n=nz_ba_size_cum_d[ci]+1
+        s=0
+        while 1:
+            if s==nz_ba_size_d[ci]-2:
+                break
+            a=bound_data_ordered_d[nz_ba_d[n+s-1]]
+            b=bound_data_ordered_d[nz_ba_d[n+s]]
+            c=bound_data_ordered_d[nz_ba_d[n+s+1]]
+            a0=int(a/scaled_shape[1])
+            a1=a%scaled_shape[1]
+            b0=int(b/scaled_shape[1])
+            b1=b%scaled_shape[1]
+            c0=int(c/scaled_shape[1])
+            c1=c%scaled_shape[1]
+            
+            angle_pre=math.atan2(np.float64(a1-b1),np.float64(a0-b0))*180/math.pi
+            angle_cur=math.atan2(np.float64(b1-c1),np.float64(b0-c0))*180/math.pi
+            diff=angle_diff(angle_pre,angle_cur)
+            ba_change_d[n+s]=diff
+            s+=1
 
 
-def main2():
-    a=np.zeros(3000000,dtype=np.int64)
-    for i in range(3200,65000,2000):
-        a[i]=i
-    nz=get_non_zeros(a)
-    print(nz)
+
+@cuda.jit(device=True)
+def angle_diff(a,b):
+    diff=b-a
+    if diff>180:
+        diff=diff-360
+    elif diff<-180:
+        diff=diff+360
+    return diff
+
 
 @cuda.jit
 def find_detail(nz_ba_d,bound_threshold_d,bound_abstract_d,bound_data_ordered_d,max_pd_d,scaled_shape,bound_mark_d,ba_size_d):
@@ -423,6 +475,8 @@ def get_bound_data_order(nz_a_max_dist,nz_s,tmp_img,init_bound_abstract,bound_da
         x2=index2%tmp_img.shape[1]
         threshold_ratio=threshold_in
         threshold=sqrt(float(pow(y2-y,2)+pow(x2-x,2)))/threshold_ratio
+        if threshold<10:
+            threshold=10
         r=y
         c=x
         color=tmp_img[r][c]
