@@ -1,7 +1,7 @@
 # pyrebel
 # On Jetson Nano
 Usage:<br>
-```python3 pynvrebel.py --input <filename.png>```<br>
+```python3 pynvrebel.py --input <filename.png>```<br><br>
 Optional arguments<br>
 ```--threshold <threshold value>```<br>
 ```--output <output filename>```<br><br>
