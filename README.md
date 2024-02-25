@@ -3,8 +3,10 @@
 Usage:<br>
 ```python3 pynvrebel.py --input <filename.png>```<br><br>
 Optional arguments<br>
-```--threshold <threshold value>``` Change the threshold value. Defaults to 32.<br>
-```--output <output filename>```<br><br>
+```--threshold <value>``` Change the threshold value. Defaults to 32.<br>
+```--blob <value>``` Change blob under inquiry. Defaults to 0.<br>
+```--layer <value>``` Select layer for which change is printed. Defaults to 0.<br>
+```--output <output filename>```Change output filename. Defaults to "output.png".<br><br>
 For example,<br>
 ```python3 pynvrebel.py --input letters.png --threshold 32```<br>
 
