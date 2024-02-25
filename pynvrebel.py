@@ -41,7 +41,7 @@ parser.add_argument("-t","--threshold",type=int,help="Threshold. Higher number g
 parser.add_argument("-b","--blob",type=int,help="Selects the blob.")
 parser.add_argument("-o","--output",help="Output filename.")
 parser.add_argument("-l","--layer",type=int,help="Selects the layer of bound abstraction.")
-
+parser.add_argument("-c","--counter",type=int,help="Selects counter.")
 
 # create video sources & outputs
 input = videoSource("csi://0", options={'width':320,'height':240,'framerate':30,'flipMethod':'rotate-270'})
@@ -79,6 +79,10 @@ def main():
             layer_n=args.layer
         else:
             layer_n=0
+        if args.counter:
+            counter=args.counter
+        else:
+            counter=0
         
 
         if args.output:
@@ -176,43 +180,48 @@ def main():
         bound_abstract_h=bound_abstract_d.copy_to_host()
         nz_ba_h=get_non_zeros(bound_abstract_h)
         nz_ba_d=cuda.to_device(nz_ba_h)
-        nz_ba_init_d=nz_ba_d
         nz_ba_pre_size=len(nz_ba_h)
-        max_pd_h=np.zeros([1],np.float64)
-        max_pd_d=cuda.to_device(max_pd_h)
+        ba_size_h=ba_size_d.copy_to_host()
+        nz_ba_size_h=get_non_zeros(ba_size_h)
+        nz_ba_size_d=cuda.to_device(nz_ba_size_h)
+        nz_ba_size_cum_=np.cumsum(nz_ba_size_h)
+        nz_ba_size_cum=np.delete(np.insert(nz_ba_size_cum_,0,0),-1)
+        nz_ba_size_cum_d=cuda.to_device(nz_ba_size_cum)
+ 
+        ba_max_pd=np.zeros([len(nz_ba_h),2],np.float64)
+        ba_max_pd_d=cuda.to_device(ba_max_pd)
         out_image=np.zeros(scaled_shape,dtype=np.int)
         out_image_d=cuda.to_device(out_image)
         n=0
         draw_pixels_cuda(bound_data_ordered_d,100,out_image_d)
+        print(nz_ba_size_h)
         while 1:
-            find_detail[len(nz_ba_h),1](nz_ba_d,bound_threshold_d,bound_abstract_d,bound_data_ordered_d,max_pd_d,scaled_shape_d,bound_mark_d,ba_size_d)
+            find_ba_max_pd[len(nz_ba_h),1](nz_ba_d,nz_ba_size_d,bound_data_ordered_d,ba_max_pd_d,scaled_shape_d)
             cuda.synchronize()
+            ba_max_pd_h=ba_max_pd_d.copy_to_host()
+
+            find_next_ba[len(nz_s),1](ba_max_pd_d,nz_ba_size_d,nz_ba_size_cum_d,bound_abstract_d)
+            cuda.synchronize()
+    
             bound_abstract_h=bound_abstract_d.copy_to_host()
             nz_ba_h=get_non_zeros(bound_abstract_h)
             nz_ba_d=cuda.to_device(nz_ba_h)
-            ba_size_h=ba_size_d.copy_to_host()
-            nz_ba_size=get_non_zeros(ba_size_h)
-            nz_ba_size_d=cuda.to_device(nz_ba_size)
-            nz_ba_size_cum_=np.cumsum(nz_ba_size)
+
+            ba_max_pd=np.zeros([len(nz_ba_h),2],np.float64)
+            ba_max_pd_d=cuda.to_device(ba_max_pd)
+
+            nz_ba_size_h=nz_ba_size_d.copy_to_host()
+            nz_ba_size_cum_=np.cumsum(nz_ba_size_h)
             nz_ba_size_cum=np.delete(np.insert(nz_ba_size_cum_,0,0),-1)
             nz_ba_size_cum_d=cuda.to_device(nz_ba_size_cum)
-            ba_change=np.zeros([len(nz_ba_h)],dtype=np.float64)
-            ba_change_d=cuda.to_device(ba_change)
-            print("layer",n,":",nz_ba_size)
-            if n==layer_n:
-                select_ba=nz_ba_h[nz_ba_size_cum[blob_index]:nz_ba_size_cum[blob_index+1]]
-                select_ba_d=cuda.to_device(select_ba)
-                decrement_by_one[len(select_ba),1](select_ba_d)
-                draw_pixels_from_indices_cuda(select_ba_d,bound_data_ordered_d,255,out_image_d)
-                find_change[math.ceil(len(nz_ba_h)/256),256](nz_ba_size_d,nz_ba_size_cum_d,nz_ba_d,bound_data_ordered_d,scaled_shape_d,ba_change_d)
-                cuda.synchronize()
-                ba_change_h=ba_change_d.copy_to_host()
-                select_ba_change=ba_change_h[nz_ba_size_cum[blob_index]:nz_ba_size_cum[blob_index+1]]
-                print("change:",select_ba_change)
+            
+            print(nz_ba_size_h)
 
-            if len(nz_ba_h)==nz_ba_pre_size:
+            if n==counter:
+                temp_ba_d=nz_ba_d
+                decrement_by_one[len(nz_ba_h),1](temp_ba_d)
+                draw_pixels_from_indices_cuda(temp_ba_d,bound_data_ordered_d,255,out_image_d)
                 break
-            nz_ba_pre_size=len(nz_ba_h)
             n+=1
         
         out_image_h=out_image_d.copy_to_host()
@@ -230,6 +239,71 @@ def main():
         n+=1
         print("Finished in total of",time.time()-init_time,"seconds at",float(1/(time.time()-init_time)),"fps count=",n)
         break
+
+@cuda.jit
+def find_next_ba(ba_max_pd_d,nz_ba_size_d,nz_ba_size_cum_d,bound_abstract_d):
+    ci=cuda.grid(1)
+    if ci<len(nz_ba_size_d):
+        n=nz_ba_size_cum_d[ci]
+        s=1
+        d_max=0.0
+        d_max_i=n
+        while 1:
+            if ba_max_pd_d[n][0]>d_max:
+                d_max=ba_max_pd_d[n][0]
+                d_max_i=int(ba_max_pd_d[n][1])
+            if s==nz_ba_size_d[ci]:
+                break
+            s+=1
+            n+=1
+    cuda.syncthreads()
+    if d_max>10:
+        bound_abstract_d[d_max_i]=d_max_i
+        nz_ba_size_d[ci]+=1
+
+@cuda.jit
+def find_ba_max_pd(nz_ba_d,nz_ba_size_d,bound_data_ordered_d,ba_max_pd_d,scaled_shape):
+    ci=cuda.grid(1)
+    if ci<len(nz_ba_d)-1:
+        if nz_ba_d[ci]+1==nz_ba_d[ci+1]:
+            return
+        a=bound_data_ordered_d[nz_ba_d[ci]-1]
+        b=bound_data_ordered_d[nz_ba_d[ci+1]-1]
+        a0=int(a/scaled_shape[1])
+        a1=a%scaled_shape[1]
+        b0=int(b/scaled_shape[1])
+        b1=b%scaled_shape[1]
+        #threshold=bound_threshold_d[nz_ba_d[ci]]
+        #threshold=cmath.sqrt(float(pow(b0-a0,2)+pow(b1-a1,2))).real/8
+        n=nz_ba_d[ci]+1
+        i=0
+        pd_max=0.0
+        pd_max_i=n
+        while 1:
+            if n==nz_ba_d[ci+1]:
+                break
+            c=bound_data_ordered_d[n-1]
+            c0=int(c/scaled_shape[1])
+            c1=c%scaled_shape[1]
+            pd=abs((a1-b1)*(a0-c0)-(a0-b0)*(a1-c1))/cmath.sqrt(pow(a1-b1,2)+pow(a0-b0,2)).real
+
+            if pd>pd_max:
+                pd_max=pd
+                pd_max_i=n
+            n+=1
+    cuda.syncthreads()
+    ba_max_pd_d[ci][0]=pd_max
+    ba_max_pd_d[ci][1]=pd_max_i
+    """
+    if pd_max>threshold:
+        bound_abstract_d[pd_max_i]=pd_max_i
+        seed_=bound_mark_d[nz_ba_d[ci]-1]
+        #ba_size_d[seed_]+=1
+        cuda.atomic.add(ba_size_d,seed_,1)
+    """
+
+
+
 
 @cuda.jit
 def find_change(nz_ba_size_d,nz_ba_size_cum_d,nz_ba_d,bound_data_ordered_d,scaled_shape,ba_change_d):
@@ -319,7 +393,7 @@ def find_detail(nz_ba_d,bound_threshold_d,bound_abstract_d,bound_data_ordered_d,
             #ba_size_d[seed_]+=1
             cuda.atomic.add(ba_size_d,seed_,1)
 
-
+        
 @cuda.jit
 def increment_by_one(array_d):
     ci=cuda.grid(1)
@@ -457,7 +531,7 @@ def get_dist_data_init(bound_data_d,tmp_img,dist_data_d):
         dist_data_d[ci]=d_max
 
 @cuda.jit
-def get_bound_data_order(nz_a_max_dist,nz_s,tmp_img,init_bound_abstract,bound_data_order_d,bound_threshold_d,bound_mark_d,ba_size_d,threshold_in):
+def get_bound_data_order(nz_a_max_dist,nz_si_cum_d,tmp_img,init_bound_abstract,bound_data_order_d,bound_threshold_d,bound_mark_d,ba_size_d,threshold_in):
     ci=cuda.grid(1)
     if ci<len(nz_a_max_dist):
         index=nz_a_max_dist[ci][0]
@@ -468,12 +542,12 @@ def get_bound_data_order(nz_a_max_dist,nz_s,tmp_img,init_bound_abstract,bound_da
         x2=index2%tmp_img.shape[1]
         threshold_ratio=threshold_in
         threshold=sqrt(float(pow(y2-y,2)+pow(x2-x,2)))/threshold_ratio
-        if threshold<10:
-            threshold=10
+        if threshold<5:
+            threshold=5
         r=y
         c=x
         color=tmp_img[r][c]
-        n=nz_s[ci]
+        n=nz_si_cum_d[ci]
         init_n=n+1
         init_bound_abstract[n]=n+1
         bound_threshold_d[n]=threshold
