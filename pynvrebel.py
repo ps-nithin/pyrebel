@@ -38,9 +38,9 @@ from PIL import Image
 parser=argparse.ArgumentParser()
 parser.add_argument("-i","--input",help="Input file name. Defaults to camera stream.")
 parser.add_argument("-t","--threshold",type=int,help="Threshold. Higher number gives higher resolution.")
-parser.add_argument("-ba","--bound_abstract_index",type=int,help="Selects the bound abstract.")
+parser.add_argument("-b","--blob",type=int,help="Selects the blob.")
 parser.add_argument("-o","--output",help="Output filename.")
-
+parser.add_argument("-l","--layer",type=int,help="Selects the layer of bound abstraction.")
 
 
 # create video sources & outputs
@@ -71,11 +71,16 @@ def main():
             thresh=args.threshold
         else:
             thresh=32
-        if args.bound_abstract_index:
-            ba_index=args.bound_abstract_index
+        if args.blob:
+            blob_index=args.blob
         else:
-            ba_index=0
+            blob_index=0
+        if args.layer:
+            layer_n=args.layer
+        else:
+            layer_n=0
         
+
         if args.output:
             out_loc=args.output
         else:
@@ -175,53 +180,41 @@ def main():
         nz_ba_pre_size=len(nz_ba_h)
         max_pd_h=np.zeros([1],np.float64)
         max_pd_d=cuda.to_device(max_pd_h)
+        out_image=np.zeros(scaled_shape,dtype=np.int)
+        out_image_d=cuda.to_device(out_image)
+        n=0
+        draw_pixels_cuda(bound_data_ordered_d,100,out_image_d)
         while 1:
             find_detail[len(nz_ba_h),1](nz_ba_d,bound_threshold_d,bound_abstract_d,bound_data_ordered_d,max_pd_d,scaled_shape_d,bound_mark_d,ba_size_d)
             cuda.synchronize()
             bound_abstract_h=bound_abstract_d.copy_to_host()
             nz_ba_h=get_non_zeros(bound_abstract_h)
             nz_ba_d=cuda.to_device(nz_ba_h)
+            ba_size_h=ba_size_d.copy_to_host()
+            nz_ba_size=get_non_zeros(ba_size_h)
+            nz_ba_size_d=cuda.to_device(nz_ba_size)
+            nz_ba_size_cum_=np.cumsum(nz_ba_size)
+            nz_ba_size_cum=np.delete(np.insert(nz_ba_size_cum_,0,0),-1)
+            nz_ba_size_cum_d=cuda.to_device(nz_ba_size_cum)
+            ba_change=np.zeros([len(nz_ba_h)],dtype=np.float64)
+            ba_change_d=cuda.to_device(ba_change)
+            print("layer",n,":",nz_ba_size)
+            if n==layer_n:
+                select_ba=nz_ba_h[nz_ba_size_cum[blob_index]:nz_ba_size_cum[blob_index+1]]
+                select_ba_d=cuda.to_device(select_ba)
+                decrement_by_one[len(select_ba),1](select_ba_d)
+                draw_pixels_from_indices_cuda(select_ba_d,bound_data_ordered_d,255,out_image_d)
+                find_change[math.ceil(len(nz_ba_h)/256),256](nz_ba_size_d,nz_ba_size_cum_d,nz_ba_d,bound_data_ordered_d,scaled_shape_d,ba_change_d)
+                cuda.synchronize()
+                ba_change_h=ba_change_d.copy_to_host()
+                select_ba_change=ba_change_h[nz_ba_size_cum[blob_index]:nz_ba_size_cum[blob_index+1]]
+                print("change:",select_ba_change)
+
             if len(nz_ba_h)==nz_ba_pre_size:
                 break
             nz_ba_pre_size=len(nz_ba_h)
+            n+=1
         
-        #ba_change_d=cuda.device_array([len(nz_ba)-len(nz_a)],dtype=np.int)
-        ba_size_h=ba_size_d.copy_to_host()
-        nz_ba_size=get_non_zeros(ba_size_h)
-        nz_ba_size_d=cuda.to_device(nz_ba_size)
-        nz_ba_size_cum_=np.cumsum(nz_ba_size)
-        nz_ba_size_cum=np.delete(np.insert(nz_ba_size_cum_,0,0),-1)
-        nz_ba_size_cum_d=cuda.to_device(nz_ba_size_cum)
-        
-        ba_change=np.zeros([len(nz_ba_h)],dtype=np.float64)
-        ba_change_d=cuda.to_device(ba_change)
-
-        decrement_by_one[len(nz_ba_h),1](nz_ba_d)
-        cuda.synchronize()
-        nz_ba_h=nz_ba_d.copy_to_host()
-        find_change[math.ceil(len(nz_ba_h)/256),256](nz_ba_size_d,nz_ba_size_cum_d,nz_ba_d,bound_data_ordered_d,scaled_shape_d,ba_change_d)
-        cuda.synchronize()
-        ba_change_h=ba_change_d.copy_to_host()
-        
-        out_image=np.zeros(scaled_shape,dtype=np.int)
-        out_image_d=cuda.to_device(out_image)
-        
-        print(nz_ba_size)
-        select_ba=nz_ba_h[nz_ba_size_cum[ba_index]:nz_ba_size_cum[ba_index+1]]
-        select_ba_change=ba_change_h[nz_ba_size_cum[ba_index]:nz_ba_size_cum[ba_index+1]]
-        print(select_ba_change)
-        select_ba_d=cuda.to_device(select_ba)
-        draw_pixels_cuda(bound_data_ordered_d,100,out_image_d)
-        decrement_by_one[len(nz_ba_h),1](nz_ba_d)
-        draw_pixels_from_indices_cuda(select_ba_d,bound_data_ordered_d,255,out_image_d)
-
-                
-        """
-        draw_pixels_cuda(bound_data_ordered_d,100,out_image_d)
-        decrement_by_one[len(nz_ba_h),1](nz_ba_d)
-        draw_pixels_from_indices_cuda(nz_ba_d,bound_data_ordered_d,255,out_image_d)
-        """
-
         out_image_h=out_image_d.copy_to_host()
         #img_boundary_h=img_boundary_d.copy_to_host()
         #print(img_boundary_h)
@@ -244,9 +237,9 @@ def find_change(nz_ba_size_d,nz_ba_size_cum_d,nz_ba_d,bound_data_ordered_d,scale
     if ci<len(nz_ba_size_d):
         n=nz_ba_size_cum_d[ci]
         s=nz_ba_size_d[ci]-2
-        a=bound_data_ordered_d[nz_ba_d[n+s]]
-        b=bound_data_ordered_d[nz_ba_d[n]]
-        c=bound_data_ordered_d[nz_ba_d[n+1]]
+        a=bound_data_ordered_d[nz_ba_d[n+s]-1]
+        b=bound_data_ordered_d[nz_ba_d[n]-1]
+        c=bound_data_ordered_d[nz_ba_d[n+1]-1]
         a0=int(a/scaled_shape[1])
         a1=a%scaled_shape[1]
         b0=int(b/scaled_shape[1])
@@ -264,9 +257,9 @@ def find_change(nz_ba_size_d,nz_ba_size_cum_d,nz_ba_d,bound_data_ordered_d,scale
         while 1:
             if s==nz_ba_size_d[ci]-2:
                 break
-            a=bound_data_ordered_d[nz_ba_d[n+s-1]]
-            b=bound_data_ordered_d[nz_ba_d[n+s]]
-            c=bound_data_ordered_d[nz_ba_d[n+s+1]]
+            a=bound_data_ordered_d[nz_ba_d[n+s-1]-1]
+            b=bound_data_ordered_d[nz_ba_d[n+s]-1]
+            c=bound_data_ordered_d[nz_ba_d[n+s+1]-1]
             a0=int(a/scaled_shape[1])
             a1=a%scaled_shape[1]
             b0=int(b/scaled_shape[1])
