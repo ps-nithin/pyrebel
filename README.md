@@ -6,7 +6,7 @@ Optional arguments<br>
 ```--threshold <value>``` Change the threshold value. Defaults to 32.<br>
 ```--blob <value>``` Selects the blob. Defaults to 0.<br>
 ```--layer <value>``` Selects the layer of abstraction. Defaults to 0.<br>
-```--output <output filename>```Change output filename. Defaults to "output.png".<br><br>
+```--output <output filename>```Changes the output filename. Defaults to "output.png".<br><br>
 For example,<br>
 ```python3 pynvrebel.py --input letters.png --threshold 32```<br>
 
