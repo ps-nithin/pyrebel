@@ -187,14 +187,17 @@ def main():
         nz_ba_size_cum_=np.cumsum(nz_ba_size_h)
         nz_ba_size_cum=np.delete(np.insert(nz_ba_size_cum_,0,0),-1)
         nz_ba_size_cum_d=cuda.to_device(nz_ba_size_cum)
- 
+        
+        ba_change=np.zeros([len(nz_ba_size_h)],dtype=np.float64)
+        ba_change_d=cuda.to_device(ba_change)
+
         ba_max_pd=np.zeros([len(nz_ba_h),2],np.float64)
         ba_max_pd_d=cuda.to_device(ba_max_pd)
         out_image=np.zeros(scaled_shape,dtype=np.int)
         out_image_d=cuda.to_device(out_image)
         n=0
         draw_pixels_cuda(bound_data_ordered_d,100,out_image_d)
-        print(nz_ba_size_h)
+        #print("init layer",nz_ba_size_h)
         while 1:
             find_ba_max_pd[len(nz_ba_h),1](nz_ba_d,nz_ba_size_d,bound_data_ordered_d,ba_max_pd_d,scaled_shape_d)
             cuda.synchronize()
@@ -215,12 +218,23 @@ def main():
             nz_ba_size_cum=np.delete(np.insert(nz_ba_size_cum_,0,0),-1)
             nz_ba_size_cum_d=cuda.to_device(nz_ba_size_cum)
             
-            print(nz_ba_size_h)
+           
+            #print("layer",n,":",nz_ba_size_h)
+            
+            if n==layer_n:
+                select_ba=nz_ba_h[nz_ba_size_cum[blob_index]:nz_ba_size_cum[blob_index]+nz_ba_size_h[blob_index]]
+                select_ba_d=cuda.to_device(select_ba)
+                decrement_by_one[len(select_ba),1](select_ba_d)
+                draw_pixels_from_indices_cuda(select_ba_d,bound_data_ordered_d,255,out_image_d)
+                
+                ba_change=np.zeros([len(nz_ba_h)],dtype=np.float64)
+                ba_change_d=cuda.to_device(ba_change)
 
-            if n==counter:
-                temp_ba_d=nz_ba_d
-                decrement_by_one[len(nz_ba_h),1](temp_ba_d)
-                draw_pixels_from_indices_cuda(temp_ba_d,bound_data_ordered_d,255,out_image_d)
+                find_change[len(nz_ba_h),1](nz_ba_size_d,nz_ba_size_cum_d,nz_ba_d,bound_data_ordered_d,scaled_shape,ba_change_d)
+                ba_change_h=ba_change_d.copy_to_host()
+                select_ba_change=ba_change_h[nz_ba_size_cum[blob_index]:nz_ba_size_cum[blob_index]+nz_ba_size_h[blob_index]]
+                print("layer",n,"signature",select_ba_change)
+                
                 break
             n+=1
         
@@ -257,7 +271,7 @@ def find_next_ba(ba_max_pd_d,nz_ba_size_d,nz_ba_size_cum_d,bound_abstract_d):
             s+=1
             n+=1
     cuda.syncthreads()
-    if d_max>10:
+    if d_max>5:
         bound_abstract_d[d_max_i]=d_max_i
         nz_ba_size_d[ci]+=1
 
