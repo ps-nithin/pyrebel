@@ -3,12 +3,11 @@
 Usage:<br>
 ```python3 pynvrebel.py --input <filename.png>```<br><br>
 Optional arguments<br>
-```--threshold <value>``` Changes the threshold value. Defaults to 32.<br>
 ```--blob <value>``` Selects the blob. Defaults to 0.<br>
 ```--layer <value>``` Selects the layer of abstraction. Defaults to 0.<br>
 ```--output <output filename>```Changes the output filename. Defaults to "output.png".<br><br>
 For example,<br>
-```python3 pynvrebel.py --input letters.png --threshold 32```<br>
+```python3 pynvrebel.py --input letters.png --blob 1 --layer 4```<br>
 
 The expected input files are grayscale images of figures like <a href="https://github.com/ps-nithin/pyrebel/blob/main/letters.png">letters.png</a><br>
 
