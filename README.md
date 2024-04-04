@@ -15,6 +15,7 @@ Using <a href="https://github.com/ps-nithin/pyrebel/blob/main/aaa.png">aaa.png</
 
 Running the above program will open an image showing the abstract pixels in the input image file as white pixels and saves the output to disk.
 # Layers of abstraction
+<img src="figure.jpg"></img>
 At layer zero the most abstract details in the figure is compared. As we move into deeper layers finer details are compared which gives distinctiveness to each figure.
 # Read more about the logic implemented <a href="https://github.com/ps-nithin/pyrebel/blob/main/abstract.pdf">here</a>
 
