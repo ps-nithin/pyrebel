@@ -15,7 +15,7 @@ The expected input files are grayscale images of figures like <a href="https://g
 Using <a href="https://github.com/ps-nithin/pyrebel/blob/main/aaa.png">aaa.png</a> or <a href="https://github.com/ps-nithin/pyrebel/blob/main/sss.png">sss.png</a> demonstrates how the program responds to similar figures of different scales.<br>
 
 Running the above program will 
-1. open an image showing the abstract pixels in the input image file as white pixels and saves the output to disk.
+1. Open an image showing the abstract pixels in the input image file as white pixels and saves the output to disk.
 2. Display the layers of abstract pixels in the blob for the given depth.
 
 # Layers of abstraction
