@@ -8,7 +8,7 @@ Optional arguments<br>
 ```--layer <value>``` Selects the layer of abstraction. Defaults to 0.<br>
 ```--output <output filename>```Changes the output filename. Defaults to "output.png".<br><br>
 For example,<br>
-```python3 pynvrebel.py --input letters.png --blob 1 --layer 4```<br>
+```python3 pynvrebel.py --input deep.png --blob 1 --depth 20 --layer 0```<br>
 
 The expected input files are grayscale images of figures like <a href="https://github.com/ps-nithin/pyrebel/blob/main/letters.png">letters.png</a><br>
 
