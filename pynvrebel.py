@@ -40,8 +40,10 @@ parser.add_argument("-i","--input",help="Input file name. Defaults to camera str
 parser.add_argument("-t","--threshold",type=int,help="Threshold. Higher number gives higher resolution.")
 parser.add_argument("-b","--blob",type=int,help="Selects the blob.")
 parser.add_argument("-o","--output",help="Output filename.")
-parser.add_argument("-l","--layer",type=int,help="Selects the layer of bound abstraction.")
+parser.add_argument("-l","--layer",type=int,help="Selects the layer of abstraction.")
 parser.add_argument("-c","--counter",type=int,help="Selects counter.")
+parser.add_argument("-d","--depth",type=int,help="Selects depth of abstraction.")
+
 
 # create video sources & outputs
 input = videoSource("csi://0", options={'width':320,'height':240,'framerate':30,'flipMethod':'rotate-270'})
@@ -50,7 +52,7 @@ output = videoOutput("", argv=sys.argv)
 
 # process frames until EOS or the user exits
 def main():
-    n=0
+    nn=0
     args=parser.parse_args()
     while True:
         start_time=time.time()
@@ -83,7 +85,12 @@ def main():
             counter=args.counter
         else:
             counter=0
+        if args.depth:
+            depth=args.depth
+        else:
+            depth=10
         
+
 
         if args.output:
             out_loc=args.output
@@ -145,6 +152,17 @@ def main():
         nz_s_cum_d=cuda.to_device(nz_s_cum)
         nz_a_d=cuda.to_device(nz_a)
         nz_s_d=cuda.to_device(nz_s)
+        
+        layer_width=np.zeros(1,dtype=np.int)
+        find_max[math.ceil(len(nz_s)/16),16](nz_s_d,layer_width)
+        cuda.synchronize()
+
+        layers=np.zeros([len(nz_a),layer_width[0],4],dtype=np.float64)
+        layers_mark=np.zeros([len(nz_a),layer_width[0]],dtype=np.float64)
+        layers_d=cuda.to_device(layers)
+        layers_mark_d=cuda.to_device(layers_mark)
+        last_ba=np.zeros([len(nz_a),2],dtype=np.float64)
+        last_ba_d=cuda.to_device(last_ba)
 
         nz_si_d=cuda.to_device(nz_s)
         increment_by_one[len(nz_s),1](nz_si_d)
@@ -197,13 +215,14 @@ def main():
         out_image_d=cuda.to_device(out_image)
         n=0
         draw_pixels_cuda(bound_data_ordered_d,100,out_image_d)
-        #print("init layer",nz_ba_size_h)
+        print("len(nz_ba_h)=",nz_ba_pre_size)
+        next_ba_count=2
         while 1:
             find_ba_max_pd[len(nz_ba_h),1](nz_ba_d,nz_ba_size_d,bound_data_ordered_d,ba_max_pd_d,scaled_shape_d)
             cuda.synchronize()
             ba_max_pd_h=ba_max_pd_d.copy_to_host()
 
-            find_next_ba[len(nz_s),1](ba_max_pd_d,nz_ba_size_d,nz_ba_size_cum_d,bound_abstract_d)
+            find_next_ba[len(nz_s),1](ba_max_pd_d,nz_ba_d,nz_ba_size_d,nz_ba_size_cum_d,bound_abstract_d,last_ba_d,layers_d,next_ba_count)
             cuda.synchronize()
     
             bound_abstract_h=bound_abstract_d.copy_to_host()
@@ -217,10 +236,13 @@ def main():
             nz_ba_size_cum_=np.cumsum(nz_ba_size_h)
             nz_ba_size_cum=np.delete(np.insert(nz_ba_size_cum_,0,0),-1)
             nz_ba_size_cum_d=cuda.to_device(nz_ba_size_cum)
-            
+            next_ba_count+=1
            
-            #print("layer",n,":",nz_ba_size_h)
-            
+            if len(nz_ba_h)>nz_ba_pre_size:
+                nz_ba_pre_size=len(nz_ba_h)
+            else:
+                break
+            """
             if n==layer_n:
                 select_ba=nz_ba_h[nz_ba_size_cum[blob_index]:nz_ba_size_cum[blob_index]+nz_ba_size_h[blob_index]]
                 select_ba_d=cuda.to_device(select_ba)
@@ -234,10 +256,29 @@ def main():
                 ba_change_h=ba_change_d.copy_to_host()
                 select_ba_change=ba_change_h[nz_ba_size_cum[blob_index]:nz_ba_size_cum[blob_index]+nz_ba_size_h[blob_index]]
                 print("layer",n,"signature",select_ba_change)
-                
                 break
+            """
             n+=1
+        cuda.synchronize()
+        layers_h=layers_d.copy_to_host()
+        find_layers_mark(layers_h,layers_mark_d,depth)
+
+        layers_mark_abstract=np.zeros([len(nz_a),layer_width[0]],dtype=np.float64)
+        layers_mark_abstract_d=cuda.to_device(layers_mark_abstract)
         
+        find_layers_mark_abstract[len(nz_a),1](layers_mark_d,layers_mark_abstract_d)
+        
+        #print(layers_h[blob_index][:10])
+        layers_mark_abstract_h=layers_mark_abstract_d.copy_to_host()
+        print(layers_mark_abstract_h[blob_index][:depth])
+        #select_ba=np.ascontiguousarray(layers_h[blob_index][:15,0])
+        select_ba=np.ascontiguousarray(layers_h[blob_index][:int(layers_mark_abstract_h[blob_index][layer_n]),0]).astype(int)
+        #print(select_ba)
+        select_ba_d=cuda.to_device(select_ba)
+        decrement_by_one[len(select_ba),1](select_ba_d)
+        draw_pixels_from_indices_cuda(select_ba_d,bound_data_ordered_d,255,out_image_d)
+
+        print("len(nz_ba_h)=",nz_ba_pre_size)
         out_image_h=out_image_d.copy_to_host()
         #img_boundary_h=img_boundary_d.copy_to_host()
         #print(img_boundary_h)
@@ -246,16 +287,83 @@ def main():
         output_png=cudaToNumpy(img_boundary_cuda_rgb)
         write_image(out_loc,output_png)
         # render the image
-        output.Render(img_boundary_cuda_rgb)
+        #output.Render(img_boundary_cuda_rgb)
         # exit on input/output EOS
         #if not input.IsStreaming() or not output.IsStreaming():
         #    break
-        n+=1
-        print("Finished in total of",time.time()-init_time,"seconds at",float(1/(time.time()-init_time)),"fps count=",n)
+        nn+=1
+        print("Finished in total of",time.time()-init_time,"seconds at",float(1/(time.time()-init_time)),"fps count=",nn)
         break
 
 @cuda.jit
-def find_next_ba(ba_max_pd_d,nz_ba_size_d,nz_ba_size_cum_d,bound_abstract_d):
+def find_layers_mark_abstract(layers_mark_d,layers_mark_abstract_d):
+    ci=cuda.grid(1)
+    if ci<len(layers_mark_d):
+        layers_mark_abstract_d[ci][0]=layers_mark_d[ci][0]
+        n=1
+        i=1
+        while 1:
+            if layers_mark_d[ci][n]==0:
+                break
+            if layers_mark_d[ci][n]>layers_mark_abstract_d[ci][i-1]:
+                layers_mark_abstract_d[ci][i]=layers_mark_d[ci][n]
+                i+=1
+            n+=1
+
+def find_layers_mark(layers_h_temp,layers_mark_d,depth):
+    layers_h=layers_h_temp
+    for i in range(0,layers_h.shape[0]):
+        mark_i=0
+        while 1:
+            if mark_i==depth:
+                break
+            layer_d=cuda.to_device(np.ascontiguousarray(layers_h[i][:,2]))
+            find_mark[layers_h.shape[1],1](layer_d,layers_mark_d[i],mark_i)
+            cuda.synchronize()
+            min_index=np.zeros(1,dtype=np.int)
+            min_index_d=cuda.to_device(min_index)
+            cur_min=layers_mark_d[i][mark_i]
+            find_index_from_val[layers_h.shape[1],1](cur_min,layer_d,min_index_d)
+            cuda.synchronize()
+            layers_h[i][min_index_d[0]][2]=99999
+            mark_i+=1
+    for i in range(0,layers_mark_d.shape[0]):
+        n=0
+        while 1:
+            if layers_mark_d[i][n]==0:
+                break
+            index=np.zeros(1,dtype=np.int)
+            index_d=cuda.to_device(index)
+            val_array_d=cuda.to_device(np.ascontiguousarray(layers_h[i][:,3]))
+            find_index_from_val[val_array_d.shape[0],1](layers_mark_d[i][n],val_array_d,index_d)
+            cuda.synchronize()
+            update_index[val_array_d.shape[0],1](layers_mark_d[i],n,index_d)
+            n+=1
+
+@cuda.jit
+def update_index(array_to_update,n,index):
+    ci=cuda.grid(1)
+    if ci<len(array_to_update):
+        if ci==n:
+            array_to_update[ci]=index[0]
+
+@cuda.jit
+def find_index_from_val(val,val_array,index):
+    ci=cuda.grid(1)
+    if ci<len(val_array):
+        if val_array[ci]==val:
+            index[0]=ci
+
+@cuda.jit
+def find_mark(layer_d,layer_mark_d,mark_i):
+    ci=cuda.grid(1)
+    if ci<len(layer_d):
+        cuda.atomic.min(layer_mark_d,mark_i,layer_d[ci])
+
+
+
+@cuda.jit
+def find_next_ba(ba_max_pd_d,nz_ba_d,nz_ba_size_d,nz_ba_size_cum_d,bound_abstract_d,last_ba_d,layers_d,next_ba_count):
     ci=cuda.grid(1)
     if ci<len(nz_ba_size_d):
         n=nz_ba_size_cum_d[ci]
@@ -273,7 +381,16 @@ def find_next_ba(ba_max_pd_d,nz_ba_size_d,nz_ba_size_cum_d,bound_abstract_d):
     cuda.syncthreads()
     if d_max>5:
         bound_abstract_d[d_max_i]=d_max_i
+        if next_ba_count==2:
+            layers_d[ci][0][0]=nz_ba_d[nz_ba_size_cum_d[ci]]
+            layers_d[ci][1][0]=nz_ba_d[nz_ba_size_cum_d[ci]+1]
         nz_ba_size_d[ci]+=1
+        layers_d[ci][next_ba_count][0]=d_max_i
+        layers_d[ci][next_ba_count][1]=d_max
+        layers_d[ci][next_ba_count][2]=d_max-last_ba_d[ci][1]
+        layers_d[ci][next_ba_count][3]=d_max-last_ba_d[ci][1]
+        last_ba_d[ci][0]=d_max_i
+        last_ba_d[ci][1]=d_max
 
 @cuda.jit
 def find_ba_max_pd(nz_ba_d,nz_ba_size_d,bound_data_ordered_d,ba_max_pd_d,scaled_shape):
@@ -315,9 +432,6 @@ def find_ba_max_pd(nz_ba_d,nz_ba_size_d,bound_data_ordered_d,ba_max_pd_d,scaled_
         #ba_size_d[seed_]+=1
         cuda.atomic.add(ba_size_d,seed_,1)
     """
-
-
-
 
 @cuda.jit
 def find_change(nz_ba_size_d,nz_ba_size_cum_d,nz_ba_d,bound_data_ordered_d,scaled_shape,ba_change_d):
@@ -870,8 +984,7 @@ def get_bound(img):
 @cuda.jit
 def find_max(arr_,max_):
     i=cuda.grid(1)
-    if arr_[i]>max_[0]:
-        max_[0]=arr_[i]
+    cuda.atomic.max(max_,0,arr_[i])
 
 @cuda.jit
 def get_color_index_cuda(img_array,pos):
