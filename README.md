@@ -22,6 +22,6 @@ Running the above program will
 <img src="animation.gif"></img>
 
 At layer zero the most abstract details in the figure is compared. As we move into deeper layers finer details are compared which gives distinctiveness to each figure. Each layer is marked by the biggest drop in perpendicular distance.
-# Read more about the logic implemented <a href="https://github.com/ps-nithin/pyrebel/blob/main/intro-r2.pdf">here</a>
+# Read more about the methods <a href="https://github.com/ps-nithin/pyrebel/blob/main/intro-r2.pdf">here</a>
 
 # Let the data shine!
