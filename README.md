@@ -19,7 +19,7 @@ Running the above program will
 2. Display the layers of abstract pixels in the blob for the given depth.
 
 # Edge detection demo
-This is a demo of edge detection obtained using data abstraction.<br>
+This is a demo of edge detection achieved using data abstraction.<br>
 ```python3 pyvision_edge_detection.py --preprocess <filename>```<br>
 
 Running the above program will show the edges in the image.
