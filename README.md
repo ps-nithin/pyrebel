@@ -18,6 +18,12 @@ Running the above program will
 1. Open an image showing the abstract pixels in the input image file as white pixels and saves the output to disk.
 2. Display the layers of abstract pixels in the blob for the given depth.
 
+# Edge detection demo
+This is a demo edge detection using data abstraction.
+```python3 pyvision_edge_detection.py --preprocess <filename>```<br>
+
+Running the above program will show the edges in the image.
+
 # Layers of abstraction
 <img src="animation.gif"></img>
 
