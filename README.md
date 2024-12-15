@@ -23,7 +23,7 @@ This is a demo of edge detection achieved using data abstraction.<br>
 ```python3 pyvision_edge_detection.py --preprocess <filename>```<br>
 
 Running the above program will show the edges in the image.
-<img src="images/wildlife_small.png"></img><img src="images/output_wildlife.png"></img>
+<img src="images/wildlife_small.jpg"></img><img src="images/output_wildlife.png"></img>
 # Layers of abstraction
 <img src="animation.gif"></img>
 
