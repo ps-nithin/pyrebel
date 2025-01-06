@@ -20,10 +20,10 @@ Running the above program will
 
 # Edge detection demo
 This is a demo of edge detection achieved using data abstraction.<br>
-```python3 pyvision_edge_detection.py --preprocess <filename>```<br>
+```python3 pyrebel_main_edge.py --input <filename>```<br>
 
 For eq.
-```python3 pyvision_edge_detection.py --preprocess images/wildlife.jpg```<br>
+```python3 pyrebel_main_edge.py --input images/wildlife.jpg```<br>
 
 Running the above program will show the edges in the image.<br>
 <img src="images/small_wildlife.jpg"></img><br>Below is the output image<br><img src="images/output_wildlife.png"></img>
