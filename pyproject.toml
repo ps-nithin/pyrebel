@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools >= 61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pyrebel"
+version = "1.0.1"
+dependencies = [
+  "numpy",
+  "numba",
+  "Pillow",
+]
+requires-python = ">=3.8"
+authors = [
+  {name = "Nithin PS", email = "ps.nithin@proton.me"},
+]
+maintainers = [
+  {name = "Nithin PS", email = "ps.nithin@proton.me"}
+]
+description = "A pure python library that implements abstraction of data."
+readme = "README.md"
+license = {file = "LICENSE.txt"}
+keywords = ["data", "abstraction", "vision", "machinelearning", "patternrecognition", "imagerecognition",]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python",
+  "Environment :: GPU :: NVIDIA CUDA",
+  "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+  "Intended Audience :: Science/Research",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Education",
+  "Topic :: Software Development",
+  "Topic :: Scientific/Engineering",
+  "Natural Language :: English",
+]
+
+[project.urls]
+Homepage = "https://github.com/ps-nithin/pyrebel"
+Repository = "https://github.com/ps-nithin/pyrebel.git"
