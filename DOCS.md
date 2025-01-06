@@ -1,6 +1,6 @@
 What is pyrebel?
-Pyrebel is a pure python library that implements abstraction of data.
 
+Pyrebel is a pure python library that implements abstraction of data.
 
 The class "Abstract" handles methods for abstraction of data.
 
