@@ -22,7 +22,7 @@ For eq.
 ```python3 pyrebel_main_edge.py --input images/wildlife.jpg```<br><br>
 The output is written to 'output.png'
 
-Running the above program will show the edges in the image.<br><br>
+Below is a sample image.<br><br>
 <img src="images/small_wildlife.jpg"></img><br>Below is the output image<br><br><img src="images/output_wildlife.png"></img>
 
 # Docs <a href="https://github.com/ps-nithin/pyrebel/blob/main/DOCS.md">here</a>
