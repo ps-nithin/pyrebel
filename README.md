@@ -11,7 +11,7 @@ Usage:<br>
 Optional arguments<br>
 ```--threshold <value>``` Selects the threshold of abstraction. Defaults to 5.<br><br>
 For example,<br>
-```python3 pyrebel_main.py --input images/abc.png --threshold 10```<br>
+```python3 pyrebel_main.py --input images/abc.png --threshold 10```<br><br>
 The output is written to 'output.png'
 
 # Edge detection demo
@@ -19,7 +19,7 @@ This is a demo of edge detection achieved using data abstraction.<br>
 ```python3 pyrebel_main_edge.py --input <filename>```<br>
 
 For eq.
-```python3 pyrebel_main_edge.py --input images/wildlife.jpg```<br>
+```python3 pyrebel_main_edge.py --input images/wildlife.jpg```<br><br>
 The output is written to 'output.png'
 
 Running the above program will show the edges in the image.<br>
