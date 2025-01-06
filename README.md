@@ -1,4 +1,8 @@
 # pyrebel
+A pure python library that implements abstraction of data.
+
+# Installation
+```pip install pyrebel```
 
 # Image abstraction demo
 Usage:<br>
