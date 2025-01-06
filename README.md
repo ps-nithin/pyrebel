@@ -27,7 +27,7 @@ The output is written to 'output.png'
 Running the above program will show the edges in the image.<br>
 <img src="images/small_wildlife.jpg"></img><br>Below is the output image<br><img src="images/output_wildlife.png"></img>
 
-# Documentation <a href="https://github.com/ps-nithin/pyrebel/blob/main/DOCS.md">here</a>
+# Docs<a href="https://github.com/ps-nithin/pyrebel/blob/main/DOCS.md">here</a>
 # Read more about abstraction <a href="https://github.com/ps-nithin/pyrebel/blob/main/intro-r2.pdf">here</a>
 
 # Let the data shine!
