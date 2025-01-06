@@ -1,5 +1,6 @@
 # pyrebel
 A pure python library that implements abstraction of data.
+<img src="animation.gif"></img>
 
 # Installation
 ```pip install pyrebel```
@@ -12,9 +13,6 @@ Optional arguments<br>
 For example,<br>
 ```python3 pyrebel_main.py --input images/abc.png --threshold 10```<br>
 The output is written to 'output.png'
-
-# Layers of abstraction
-<img src="animation.gif"></img>
 
 # Edge detection demo
 This is a demo of edge detection achieved using data abstraction.<br>
