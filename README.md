@@ -1,6 +1,6 @@
 # pyrebel
-# Image abstraction demo
 
+# Image abstraction demo
 Usage:<br>
 ```python3 pyrebel_main.py --input <filename.png>```<br><br>
 Optional arguments<br>
@@ -8,6 +8,7 @@ Optional arguments<br>
 For example,<br>
 ```python3 pyrebel_main.py --input images/abc.png --threshold 10```<br>
 The output is written to 'output.png'
+
 # Layers of abstraction
 <img src="animation.gif"></img>
 
