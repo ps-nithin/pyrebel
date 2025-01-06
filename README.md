@@ -1,5 +1,5 @@
 # pyrebel
-A pure python library that implements abstraction of data.<br>
+A pure python library that implements abstraction of data.<br><br>
 <img src="animation.gif"></img>
 
 # Installation
