@@ -1,22 +1,12 @@
 # pyrebel
-# On Jetson Nano
+# Image abstraction demo
 Usage:<br>
-```python3 pynvrebel.py --input <filename.png>```<br><br>
+```python3 pyrebel_main.py --input <filename.png>```<br><br>
 Optional arguments<br>
-```--depth <value>``` Selects the depth of abstraction. Defaults to 10.<br>
-```--blob <value>``` Selects the blob. Defaults to 0.<br>
-```--layer <value>``` Selects the layer of abstraction. Defaults to 0.<br>
-```--output <output filename>```Changes the output filename. Defaults to "output.png".<br><br>
+```--threshold <value>``` Selects the threshold of abstraction. Defaults to 5.<br><br>
 For example,<br>
-```python3 pynvrebel.py --input deep.png --blob 1 --depth 20 --layer 0```<br>
-
-The expected input files are grayscale images of figures like <a href="https://github.com/ps-nithin/pyrebel/blob/main/letters.png">letters.png</a><br>
-
-Using <a href="https://github.com/ps-nithin/pyrebel/blob/main/aaa.png">aaa.png</a> or <a href="https://github.com/ps-nithin/pyrebel/blob/main/sss.png">sss.png</a> demonstrates how the program responds to similar figures of different scales.<br>
-
-Running the above program will 
-1. Open an image showing the abstract pixels in the input image file as white pixels and saves the output to disk.
-2. Display the layers of abstract pixels in the blob for the given depth.
+```python3 pyrebel_main.py --input images/abc.png --threshold 10```<br>
+The output is written to 'output.png'
 
 # Edge detection demo
 This is a demo of edge detection achieved using data abstraction.<br>
@@ -24,6 +14,7 @@ This is a demo of edge detection achieved using data abstraction.<br>
 
 For eq.
 ```python3 pyrebel_main_edge.py --input images/wildlife.jpg```<br>
+The output is written to 'output.png'
 
 Running the above program will show the edges in the image.<br>
 <img src="images/small_wildlife.jpg"></img><br>Below is the output image<br><img src="images/output_wildlife.png"></img>
