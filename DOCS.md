@@ -1,8 +1,8 @@
-What is pyrebel?
+# What is pyrebel?
 
 Pyrebel is a pure python library that implements abstraction of data.
 
-The class "Abstract" handles methods for abstraction of data.
+# The class "Abstract" handles methods for abstraction of data.
 
 __init__(self,bound_data_ordered_h,n_bounds,bound_abstract_h,shape_h,is_closed,ba_threshold_pre)
 
@@ -23,7 +23,7 @@ get_sign(self)
 
 
 
-The class "Preprocess" handles methods for obtaining 1D array containing indices of boundaries of blobs in the image
+# The class "Preprocess" handles methods for obtaining 1D array containing indices of boundaries of blobs in the image
 
 __init__(self,img_array)
 
