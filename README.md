@@ -29,6 +29,6 @@ Running the above program will show the edges in the image.<br>
 
 At layer zero the most abstract details in the figure is compared. As we move into deeper layers finer details are compared which gives distinctiveness to each figure.
 # Documentation <a href="https://github.com/ps-nithin/pyrebel/blob/main/DOCS.md">here</a>
-# Read more about the abstraction <a href="https://github.com/ps-nithin/pyrebel/blob/main/intro-r2.pdf">here</a>
+# Read more about abstraction <a href="https://github.com/ps-nithin/pyrebel/blob/main/intro-r2.pdf">here</a>
 
 # Let the data shine!
