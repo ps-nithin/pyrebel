@@ -22,8 +22,8 @@ For eq.
 ```python3 pyrebel_main_edge.py --input images/wildlife.jpg```<br><br>
 The output is written to 'output.png'
 
-Running the above program will show the edges in the image.<br>
-<img src="images/small_wildlife.jpg"></img><br>Below is the output image<br><img src="images/output_wildlife.png"></img>
+Running the above program will show the edges in the image.<br><br>
+<img src="images/small_wildlife.jpg"></img><br>Below is the output image<br><br><img src="images/output_wildlife.png"></img>
 
 # Docs <a href="https://github.com/ps-nithin/pyrebel/blob/main/DOCS.md">here</a>
 # Read more about abstraction <a href="https://github.com/ps-nithin/pyrebel/blob/main/intro-r2.pdf">here</a>
