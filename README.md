@@ -3,7 +3,7 @@ A pure python library that implements abstraction of data.<br><br>
 <img src="animation.gif"></img>
 
 # Installation
-```pip install pyrebel```
+```pip install pyrebel==1.0.2```
 
 # Image abstraction demo
 Usage:<br>
