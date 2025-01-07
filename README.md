@@ -19,7 +19,7 @@ This is a demo of edge detection achieved using data abstraction.<br>
 ```python3 pyrebel_main_edge.py --input <filename>```<br>
 
 For eq.
-```python3 pyrebel_main_edge.py --input images/wildlife.jpg```<br><br>
+```python3 pyrebel_main_edge.py --input images/small_wildlife.jpg```<br><br>
 The output is written to 'output.png'.
 
 Below is a sample input image,<br><br>
