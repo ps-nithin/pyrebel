@@ -44,7 +44,8 @@ while 1:
         img_array=np.array(Image.open(args.input).convert('L'))
     else:
         print("No input file.")
-    shape_orig=img_array.shape
+    img_array_orig=img_array
+    shape_orig=img_array_orig.shape
     i=0
     while 1:
         threadsperblock=(16,16)
@@ -72,7 +73,8 @@ while 1:
         abs=Abstract(img_wave_h,img_array.shape[0],init_bound_abstract_h,img_array.shape,False,abs_threshold)
         
         # Get the abstract points
-        abs_points=abs.get_abstract_all()
+        abs.do_abstract_all()
+        abs_points=abs.get_abstract()
         
         # Get the convexity array.
         abs_sign=abs.get_sign()
@@ -80,9 +82,9 @@ while 1:
         white_count=np.count_nonzero(abs_sign==1)
         black_count=np.count_nonzero(abs_sign==-1)
         if white_count>black_count:
-            invert=1
+            invert=True
         else:
-            invert=0
+            invert=False
         print("len(abs_points)=",len(abs_points))
 
         abs_draw=decrement_by_one_cuda(abs_points)
@@ -112,8 +114,14 @@ while 1:
     # Combine the results of horizontal and vertical abstraction.
     clone_image[blockspergrid,threadsperblock](out_image_ver_d,out_image_hor_d,255)
     cuda.synchronize()
-    out_image_h=out_image_hor_d.copy_to_host()
+    
+    final_image=np.zeros(img_array_orig.shape,dtype=np.int32)
+    final_image_d=cuda.to_device(final_image)
+    img_array_orig_d=cuda.to_device(img_array_orig)
+    # Draw corresponding pixels from original input image to final image
+    clone_image2[blockspergrid,threadsperblock](img_array_orig,out_image_hor_d,final_image_d,not invert)
+    final_image_h=final_image_d.copy_to_host()
     
     # Save the output to disk.
-    Image.fromarray(out_image_h).convert('RGB').save("output.png")
+    Image.fromarray(final_image_h).convert('RGB').save("output.png")
     print("Finished in total of",time.time()-start_time,"seconds at",float(1/(time.time()-start_time)),"fps.")

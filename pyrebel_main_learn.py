@@ -15,9 +15,10 @@
 
 import numpy as np
 from PIL import Image
-import math,argparse,time
+import math,argparse,time,os
 from pyrebel.preprocess import Preprocess
 from pyrebel.abstract import Abstract
+from pyrebel.learn import Learn
 from pyrebel.utils import *
 
 # This is a demo of abstraction of boundaries of blobs in the image.
@@ -29,34 +30,52 @@ from pyrebel.utils import *
 parser=argparse.ArgumentParser()
 parser.add_argument("-i","--input",help="Input file name.")
 parser.add_argument("-t","--threshold",help="Threshold of abstraction.")
+parser.add_argument("-l","--learn",help="Symbol to learn.")
+parser.add_argument("-r","--recognize",help="Recognize the signature.")
+
 args=parser.parse_args()
 if args.threshold:
     abs_threshold=int(args.threshold)
 else:
     abs_threshold=5
-        
+
+if args.learn:
+    learn_n=0
+    if args.learn[-1]!='/':
+        learn_single=True
+        sign_name=args.learn.split("/")[-1]
+        ip_files_n=1
+    else:
+        learn_single=False
+        ip_files=os.listdir(args.learn)
+        ip_files_n=len(ip_files)
 while 1:
     start_time=time.time()    
     if args.input:
         img_array=np.array(Image.open(args.input).convert('L'))
-    else:
-        print("No input file.")
     
+    if args.recognize:
+        img_array=np.array(Image.open(args.recognize).convert('L'))
+    
+    if args.learn:
+        if learn_single:
+            #img_array=open_image(args.learn).astype('int32')
+            img_array=np.array(Image.open(args.learn).convert('L'))
+        else:
+            sign_name=ip_files[learn_n]
+            #img_array=open_image(args.learn+ip_files[learn_n]).astype('int32')
+            img_array=np.array(Image.open(args.learn+ip_files[learn_n]).convert('L'))
+            
     # Initialize the preprocessing class.
     pre=Preprocess(img_array)
-    
     # Set the minimum and maximum size of boundaries of blobs in the image. Defaults to a minimum of 64.
-    pre.set_bound_size(32,50000000)
-    
+    pre.set_bound_size(32,50000000)    
     # Perform the preprocessing to get 1D array containing boundaries of blobs in the image.
     pre.preprocess_image()
-    
     # Get the 1D array.
     bound_data=pre.get_bound_data()
-    
     # Initialize the abstract boundary.
     init_bound_abstract=pre.get_init_abstract()
-    
     # Get 1D array containing size of boundaries of blobs in the array.
     bound_size=pre.get_bound_size()
     print("len(bound_data)=",len(bound_data))
@@ -66,28 +85,36 @@ while 1:
     # Initialize the abstraction class
     abs=Abstract(bound_data,len(bound_size),init_bound_abstract,scaled_shape,True,abs_threshold)
     
-    # Get the abstract points
-    abs.do_abstract_all()
-    abs_points=abs.get_abstract()
+    # Initialize learning class
+    l=Learn()
+ 
+    print("len(know_base)=",len(l.get_know_base()))
+    i=0
+    while 1:
+        # Do one layer of abstraction
+        is_finished=abs.do_abstract_one()
+        if is_finished:
+            print("signatures loaded.")
+            break
+        ba_sign=abs.get_sign()
+        ba_size=abs.get_bound_size() 
+        # Get the signatures for the layer       
+        l.get_signatures(ba_sign,ba_size)
+        i+=1
+        
+    blob_index=2
+    top_n=3
+    if args.recognize:        
+        print("symbols found=",l.recognize_symbols(blob_index,top_n))
+    if args.learn:
+        print("learning",sign_name,l.learn(blob_index,sign_name))
+        
+    l.write_know_base()  
     
-    bounds_draw=decrement_by_one_cuda(bound_data)
-    bounds_draw_d=cuda.to_device(bounds_draw)
-
-    abs_draw=decrement_by_one_cuda(abs_points)
-    abs_draw_d=cuda.to_device(abs_draw)
-
-    out_image=np.zeros(scaled_shape,dtype=np.int32)
-    out_image_d=cuda.to_device(out_image)
-
-    # Draw the boundaries to the output image.
-    draw_pixels_cuda(bounds_draw_d,50,out_image_d)
-
-    bound_data_d=cuda.to_device(bound_data)
-    
-    # Draw the abstract points to the output image.
-    draw_pixels_from_indices_cuda(abs_draw_d,bound_data_d,255,out_image_d)
-    out_image_h=out_image_d.copy_to_host()
-    
-    # Save the output to disk.
-    Image.fromarray(out_image_h).convert('RGB').save("output.png")
     print("Finished in total of",time.time()-start_time,"seconds at",float(1/(time.time()-start_time)),"fps.")
+    if args.learn:
+        learn_n+=1
+        if learn_n==ip_files_n:
+            break
+    if args.recognize:
+        break
