@@ -28,11 +28,11 @@ Below is a sample input image,<br><br>
 # Pattern recognition
 This is a demo of pattern recognition achieved using data abstraction.<br>
 1. Learning<br>
-   ```python3 pyrebel_main_learn.py --learn /path/to/image/directory/```<br>
+   Usage: ```python3 pyrebel_main_learn.py --learn /path/to/image/directory/```<br>
    For eq. running ```python3 pyrebel_main_learn.py --learn images/letters_standard/``` learns all the images
    in the directory and links the filename with the signatures.
 2. Recognition<br>
-   ```python3 pyrebel_main_learn.py --recognize <filename>```<br>
+   Usage: ```python3 pyrebel_main_learn.py --recognize <filename>```<br>
    For eq. running ```python3 pyrebel_main_learn.py --recognize images/letters_ripple/c_ripple.png``` displays the
    symbols recognized.
    
