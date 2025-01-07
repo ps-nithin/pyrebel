@@ -37,7 +37,7 @@ This is a demo of pattern recognition achieved using data abstraction.<br>
    symbols recognized.
    
 To reset the knowledge base just delete file 'know_base.pkl'.
-The program expects a single pattern in the input file. Otherwise, the pattern has to be selected by changing variable 'blob_index' accordingly.
+The program expects a single pattern in the input image. Otherwise, a pattern has to be selected by changing variable 'blob_index' accordingly.
 
 # Docs <a href="https://github.com/ps-nithin/pyrebel/blob/main/DOCS.md">here</a>
 # Read more about abstraction <a href="https://github.com/ps-nithin/pyrebel/blob/main/intro-r2.pdf">here</a>
