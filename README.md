@@ -25,6 +25,17 @@ The output is written to 'output.png'.
 Below is a sample input image,<br><br>
 <img src="images/small_wildlife.jpg"></img><br>Below is the output image,<br><br><img src="images/output_wildlife.png"></img>
 
+# Pattern recognition
+This is a demo of pattern recognition achieved using data abstraction.<br>
+1. Learning
+   ```python3 pyrebel_main_learn.py --learn /path/to/image/directory/```
+   For eq. running ```python3 pyrebel_main_learn.py --learn images/letters_standard/``` learns all the images
+   in the directory and links the filename with the signatures.
+2. Recognition
+   ```python3 pyrebel_main_learn.py --recognize <filename>```
+   For eq. running ```python3 pyrebel_main_learn.py --recognize images/letters_ripple/c_ripple.png``` displays the
+   symbols recognized.
+   
 # Docs <a href="https://github.com/ps-nithin/pyrebel/blob/main/DOCS.md">here</a>
 # Read more about abstraction <a href="https://github.com/ps-nithin/pyrebel/blob/main/intro-r2.pdf">here</a>
 
