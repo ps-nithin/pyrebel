@@ -114,7 +114,7 @@ def clone_image(img_array,img_clone,color):
             img_clone[r][c]=color
 
 @cuda.jit
-def clone_image2(img_array_orig,image_to_clone,img_cloned,inv,count):
+def clone_image2(img_array_orig,image_to_clone,img_cloned,inv):
     # draws pixels in 'image_to_clone' with color '255' to 'img_cloned' with the color 
     # of corresponding pixels in 'img_array_orig'
     r,c=cuda.grid(2)
@@ -124,5 +124,5 @@ def clone_image2(img_array_orig,image_to_clone,img_cloned,inv,count):
                 img_cloned[r][c]=img_array_orig[r][c]
             else:
                 img_cloned[r][c]=255-img_array_orig[r][c]
-            cuda.atomic.add(count,0,1)
+            #cuda.atomic.add(count,0,1)
 

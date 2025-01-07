@@ -168,43 +168,44 @@ class Abstract:
         # Inputs
         self.bound_data_ordered_h=bound_data_ordered_h
         self.n_bounds=n_bounds
+        self.init_bound_abstract_h=bound_abstract_h
         self.bound_abstract_h=bound_abstract_h
         self.shape_h=shape_h
         self.is_closed=is_closed
         self.ba_threshold_pre=ba_threshold_pre
-        
-        # Outputs
-        self.ba_size_pre_hor=[]
+ 
+        if is_closed:
+            self.ba_size_pre_hor=np.full(n_bounds,3,dtype=np.int32)
+            self.pre_count=3
+        else:
+            self.ba_size_pre_hor=np.full(n_bounds,2,dtype=np.int32)
+            self.pre_count=2
+ 
         self.nz_ba_pre_hor=[]
         self.ba_sign_pre_h=[]
         
-    def get_abstract_all(self):
+    def do_abstract_all(self):
         bound_data_ordered_d=cuda.to_device(self.bound_data_ordered_h)
         bound_abstract_pre_d=cuda.to_device(self.bound_abstract_h)
         shape_d=cuda.to_device(self.shape_h)
         nz_ba_pre_hor=get_non_zeros(self.bound_abstract_h)
         nz_ba_pre_hor_d=cuda.to_device(nz_ba_pre_hor)
-        if self.is_closed:
-            ba_size_pre_hor=np.full(self.n_bounds,3,dtype=np.int32)
-            pre_count=3
-        else:
-            ba_size_pre_hor=np.full(self.n_bounds,2,dtype=np.int32)
-            pre_count=2
+
             
-        ba_size_pre_hor_d=cuda.to_device(ba_size_pre_hor)
-        ba_size_cum_pre_hor_=np.cumsum(ba_size_pre_hor)
+        ba_size_pre_hor_d=cuda.to_device(self.ba_size_pre_hor)
+        ba_size_cum_pre_hor_=np.cumsum(self.ba_size_pre_hor)
         ba_size_cum_pre_hor=np.delete(np.insert(ba_size_cum_pre_hor_,0,0),-1)
         ba_size_cum_pre_hor_d=cuda.to_device(ba_size_cum_pre_hor)
         
         ba_max_pd_pre=np.zeros([len(nz_ba_pre_hor),2],np.float64)
         ba_max_pd_pre_d=cuda.to_device(ba_max_pd_pre)
         ba_size_cum_pre_old_hor=ba_size_cum_pre_hor_[-1]
-        #pre_count=2
+        #pre_count=self.pre_count
         while 1:
             find_ba_max_pd[len(nz_ba_pre_hor),1](nz_ba_pre_hor_d,ba_size_pre_hor_d,bound_data_ordered_d,ba_max_pd_pre_d,shape_d)
             cuda.synchronize()
             ba_max_pd_pre_h=ba_max_pd_pre_d.copy_to_host()
-            find_next_ba_all[len(ba_size_pre_hor),1](ba_max_pd_pre_d,ba_size_pre_hor_d,ba_size_cum_pre_hor_d,bound_abstract_pre_d,self.ba_threshold_pre)
+            find_next_ba_all[len(self.ba_size_pre_hor),1](ba_max_pd_pre_d,ba_size_pre_hor_d,ba_size_cum_pre_hor_d,bound_abstract_pre_d,self.ba_threshold_pre)
             cuda.synchronize()
 
 
@@ -219,7 +220,7 @@ class Abstract:
             ba_size_cum_pre_hor_=np.cumsum(ba_size_pre_hor)
             ba_size_cum_pre_hor=np.delete(np.insert(ba_size_cum_pre_hor_,0,0),-1)
             ba_size_cum_pre_hor_d=cuda.to_device(ba_size_cum_pre_hor)
-            pre_count+=1
+            
             if ba_size_cum_pre_hor_[-1]==ba_size_cum_pre_old_hor:
                 ba_change_pre=np.zeros([len(nz_ba_pre_hor)],dtype=np.float64)
                 ba_change_pre_d=cuda.to_device(ba_change_pre)
@@ -229,14 +230,82 @@ class Abstract:
                 cuda.synchronize()
                 ba_change_pre_h=ba_change_pre_d.copy_to_host()
                 ba_sign_pre_h=ba_sign_pre_d.copy_to_host()
-                print("count=",pre_count,ba_size_cum_pre_hor_[-1])
+                print("count=",self.pre_count,ba_size_cum_pre_hor_[-1])
+                print("abstraction complete.")
                 break
             else:
                 ba_size_cum_pre_old_hor=ba_size_cum_pre_hor_[-1]
+                self.pre_count+=1
         self.ba_size_pre_hor=ba_size_pre_hor
         self.nz_ba_pre_hor=nz_ba_pre_hor
         self.ba_sign_pre_h=ba_sign_pre_h
-        return self.nz_ba_pre_hor
+        self.bound_abstract_h=bound_abstract_pre_h
+        
+    def do_abstract_one(self):
+        is_final=False
+        bound_data_ordered_d=cuda.to_device(self.bound_data_ordered_h)
+        bound_abstract_pre_d=cuda.to_device(self.bound_abstract_h)
+        shape_d=cuda.to_device(self.shape_h)
+        nz_ba_pre_hor=get_non_zeros(self.bound_abstract_h)
+        nz_ba_pre_hor_d=cuda.to_device(nz_ba_pre_hor)
+            
+        ba_size_pre_hor_d=cuda.to_device(self.ba_size_pre_hor)
+        ba_size_cum_pre_hor_=np.cumsum(self.ba_size_pre_hor)
+        ba_size_cum_pre_hor=np.delete(np.insert(ba_size_cum_pre_hor_,0,0),-1)
+        ba_size_cum_pre_hor_d=cuda.to_device(ba_size_cum_pre_hor)
+        
+        ba_max_pd_pre=np.zeros([len(nz_ba_pre_hor),2],np.float64)
+        ba_max_pd_pre_d=cuda.to_device(ba_max_pd_pre)
+        ba_size_cum_pre_old_hor=ba_size_cum_pre_hor_[-1]
+        #pre_count=self.pre_count
+        while 1:
+            find_ba_max_pd[len(nz_ba_pre_hor),1](nz_ba_pre_hor_d,ba_size_pre_hor_d,bound_data_ordered_d,ba_max_pd_pre_d,shape_d)
+            cuda.synchronize()
+            ba_max_pd_pre_h=ba_max_pd_pre_d.copy_to_host()
+            find_next_ba[len(self.ba_size_pre_hor),1](ba_max_pd_pre_d,ba_size_pre_hor_d,ba_size_cum_pre_hor_d,bound_abstract_pre_d,self.ba_threshold_pre)
+            cuda.synchronize()
+
+
+            bound_abstract_pre_h=bound_abstract_pre_d.copy_to_host()
+            nz_ba_pre_hor=get_non_zeros(bound_abstract_pre_h)
+            nz_ba_pre_hor_d=cuda.to_device(nz_ba_pre_hor)
+        
+            ba_max_pd_pre=np.zeros([len(nz_ba_pre_hor),2],np.float64)
+            ba_max_pd_pre_d=cuda.to_device(ba_max_pd_pre)
+
+            ba_size_pre_hor=ba_size_pre_hor_d.copy_to_host()
+            ba_size_cum_pre_hor_=np.cumsum(ba_size_pre_hor)
+            ba_size_cum_pre_hor=np.delete(np.insert(ba_size_cum_pre_hor_,0,0),-1)
+            ba_size_cum_pre_hor_d=cuda.to_device(ba_size_cum_pre_hor)
+            
+            if ba_size_cum_pre_hor_[-1]==ba_size_cum_pre_old_hor:
+                is_final=True
+                print("abstraction complete.")
+            else:
+                self.pre_count+=1
+            ba_change_pre=np.zeros([len(nz_ba_pre_hor)],dtype=np.float64)
+            ba_change_pre_d=cuda.to_device(ba_change_pre)
+            ba_sign_pre=np.zeros([len(nz_ba_pre_hor)],dtype=np.int32)
+            ba_sign_pre_d=cuda.to_device(ba_sign_pre)
+            find_change[len(nz_ba_pre_hor),1](ba_size_pre_hor_d,ba_size_cum_pre_hor_d,nz_ba_pre_hor_d,bound_data_ordered_d,shape_d,ba_change_pre_d,ba_sign_pre_d)
+            cuda.synchronize()
+            ba_change_pre_h=ba_change_pre_d.copy_to_host()
+            ba_sign_pre_h=ba_sign_pre_d.copy_to_host()
+            #print("count=",self.pre_count,ba_size_cum_pre_hor_[-1])
+        
+            ba_size_cum_pre_old_hor=ba_size_cum_pre_hor_[-1]
+            break
+        self.ba_size_pre_hor=ba_size_pre_hor
+        self.nz_ba_pre_hor=nz_ba_pre_hor
+        self.ba_sign_pre_h=ba_sign_pre_h
+        self.bound_abstract_h=bound_abstract_pre_h
+        return is_final
         
     def get_sign(self):
         return self.ba_sign_pre_h
+    
+    def get_abstract(self):
+        return self.nz_ba_pre_hor
+    
+    def get_bound_size(self):
+        return self.ba_size_pre_hor
