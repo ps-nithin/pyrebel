@@ -25,7 +25,7 @@ The output is written to 'output.png'.
 Below is a sample input image,<br><br>
 <img src="images/small_wildlife.jpg"></img><br>Below is the output image,<br><br><img src="images/output_wildlife.png"></img>
 
-# Pattern recognition
+# Pattern recognition demo
 This is a demo of pattern recognition achieved using data abstraction.<br>
 1. Learning<br>
    Usage: ```python3 pyrebel_main_learn.py --learn /path/to/image/directory/```<br>
