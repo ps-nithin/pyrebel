@@ -119,7 +119,7 @@ while 1:
     final_image_d=cuda.to_device(final_image)
     img_array_orig_d=cuda.to_device(img_array_orig)
     # Draw corresponding pixels from original input image to final image
-    clone_image2[blockspergrid,threadsperblock](img_array_orig,out_image_hor_d,final_image_d,not invert)
+    clone_image2[blockspergrid,threadsperblock](img_array_orig_d,out_image_hor_d,final_image_d,not invert)
     final_image_h=final_image_d.copy_to_host()
     
     # Save the output to disk.
