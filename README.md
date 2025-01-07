@@ -36,7 +36,7 @@ This is a demo of pattern recognition achieved using data abstraction.<br>
    For eq. running ```python3 pyrebel_main_learn.py --recognize images/letters_ripple/c_ripple.png``` displays the
    symbols recognized.
    
-To reset the knowledge base just delete file 'know_base.pkl'.
+To reset the knowledge base just delete file 'know_base.pkl' in the current working directory.
 The program expects a single pattern in the input image. Otherwise, a pattern has to be selected by changing variable 'blob_index' accordingly.
 
 # Docs <a href="https://github.com/ps-nithin/pyrebel/blob/main/DOCS.md">here</a>
