@@ -108,8 +108,7 @@ while 1:
         print("symbols found=",l.recognize_symbols(blob_index,top_n))
     if args.learn:
         print("learning",sign_name,l.learn(blob_index,sign_name))
-        
-    l.write_know_base()  
+        l.write_know_base()  
     
     print("Finished in total of",time.time()-start_time,"seconds at",float(1/(time.time()-start_time)),"fps.")
     if args.learn:
