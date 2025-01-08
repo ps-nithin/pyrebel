@@ -4,10 +4,10 @@ A pure python library that implements abstraction of data.<br><br>
 
 # Installation
 
-<h2>From PyPI</h2>
+## From PyPI
 ```python3 -m pip install --upgrade pyrebel```
 
-<h2>From source</h2>
+## From source
 ```git clone https://github.com/ps-nithin/pyrebel```
 ```cd pyrebel```
 ```python3 -m pip install .```
