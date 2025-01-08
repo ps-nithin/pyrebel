@@ -116,4 +116,4 @@ while 1:
         if learn_n==ip_files_n:
             break
     if args.recognize:
-        break
+        continue
