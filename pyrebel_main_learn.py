@@ -90,12 +90,12 @@ while 1:
  
     print("len(know_base)=",len(l.get_know_base()))
     i=0
+    n_layers=30
     while 1:
+        if i==n_layers:
+            break
         # Do one layer of abstraction
         is_finished=abs.do_abstract_one()
-        if is_finished:
-            print("signatures loaded.")
-            break
         ba_sign=abs.get_sign()
         ba_size=abs.get_bound_size() 
         # Get the signatures for the layer       
