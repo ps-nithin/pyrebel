@@ -36,11 +36,11 @@ Below is a sample input image,<br><br>
 This is a demo of pattern recognition achieved using data abstraction.<br>
 1. Learning<br>
    Usage: ```python3 pyrebel_main_learn.py --learn /path/to/image/directory/```<br>
-   For eq. running ```python3 pyrebel_main_learn.py --learn images/letters_standard/``` learns all the images
+   For eq. running ```python3 pyrebel_main_learn.py --learn images/train-hand/``` learns all the images
    in the directory and links the filename with the signatures.
 2. Recognition<br>
    Usage: ```python3 pyrebel_main_learn.py --recognize <filename>```<br>
-   For eq. running ```python3 pyrebel_main_learn.py --recognize images/letters_ripple/c_ripple.png``` displays the
+   For eq. running ```python3 pyrebel_main_learn.py --recognize images/recognize.png``` displays the
    symbols recognized.
    
 To reset the knowledge base just delete file 'know_base.pkl' in the current working directory.
