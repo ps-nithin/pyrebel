@@ -1,6 +1,6 @@
 # pyrebel
 A pure python library that implements abstraction of data.<br><br>
-<img src="https://github.com/ps-nithin/pyrebel/blob/main/images/animation.gif"></img>
+<img src="https://github.com/ps-nithin/pyrebel/blob/f5319cf6d9fbc6c678f3a1038af09c5b84fa97ca/images/animation.gif"></img>
 
 # Installation
 ## From PyPI
