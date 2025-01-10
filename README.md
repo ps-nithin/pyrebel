@@ -9,6 +9,10 @@ A pure python library that implements abstraction of data.<br><br>
 ```git clone https://github.com/ps-nithin/pyrebel```<br>
 ```cd pyrebel```<br>
 ```python3 -m pip install .```<br>
+
+# Running demo programs
+```cd demo/```
+
 # Image abstraction demo
 Usage:<br>
 ```python3 pyrebel_main.py --input <filename.png>```<br><br>
