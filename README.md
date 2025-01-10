@@ -1,6 +1,6 @@
 # pyrebel
 A pure python library that implements abstraction of data.<br><br>
-<img src="images/animation.gif"></img>
+<img src="https://github.com/ps-nithin/pyrebel/blob/main/images/animation.gif"></img>
 
 # Installation
 ## From PyPI
@@ -30,7 +30,7 @@ For example,<br>
 ```python3 pyrebel_main_edge.py --input images/wildlife.jpg```<br><br>
 The output is written to 'output.png'.
 Below is a sample input image,<br><br>
-<img src="images/small_wildlife.jpg"></img><br>Below is the output image,<br><br><img src="images/output_wildlife.png"></img>
+<img src="https://github.com/ps-nithin/pyrebel/blob/main/images/small_wildlife.jpg"></img><br>Below is the output image,<br><br><img src="https://github.com/ps-nithin/pyrebel/blob/main/images/output_wildlife.png"></img>
 
 ## 3. Pattern recognition demo
 This is a demo of pattern recognition achieved using data abstraction.<br>
