@@ -30,7 +30,7 @@ For example,<br>
 ```python3 pyrebel_main_edge.py --input images/wildlife.jpg```<br><br>
 The output is written to 'output.png'.
 Below is a sample input image,<br><br>
-<img src="https://github.com/ps-nithin/pyrebel/blob/main/images/small_wildlife.jpg"></img><br>Below is the output image,<br><br><img src="https://github.com/ps-nithin/pyrebel/blob/223e442aa8cdc34972f5c37d7a91240f725b7beb/images/output_wildlife.png"></img>
+<img src="https://github.com/ps-nithin/pyrebel/blob/c3ee0182aa5646a834d1e8c1f18c30d5bacd378d/images/small_wildlife.jpg"></img><br>Below is the output image,<br><br><img src="https://github.com/ps-nithin/pyrebel/blob/223e442aa8cdc34972f5c37d7a91240f725b7beb/images/output_wildlife.png"></img>
 
 ## 3. Pattern recognition demo
 This is a demo of pattern recognition achieved using data abstraction.<br>
