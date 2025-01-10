@@ -37,7 +37,7 @@ args=parser.parse_args()
 if args.threshold:
     abs_threshold=int(args.threshold)
 else:
-    abs_threshold=5
+    abs_threshold=10
 
 if args.learn:
     learn_n=0
@@ -85,29 +85,35 @@ while 1:
     # Initialize the abstraction class
     abs=Abstract(bound_data,len(bound_size),init_bound_abstract,scaled_shape,True,abs_threshold)
     
+    n_layers=20
     # Initialize learning class
-    l=Learn()
+    l=Learn(n_layers,len(bound_size))
  
     print("len(know_base)=",len(l.get_know_base()))
-    i=0
-    n_layers=30
+    i=3
+    fst=time.time()
     while 1:
         if i==n_layers:
             break
         # Do one layer of abstraction
         is_finished=abs.do_abstract_one()
         ba_sign=abs.get_sign()
-        ba_size=abs.get_bound_size() 
-        # Get the signatures for the layer       
-        l.get_signatures(ba_sign,ba_size)
+        ba_size=abs.get_bound_size()
+        # Find signatures for the layer    
+        l.find_signatures(ba_sign,ba_size)    
         i+=1
-        
+    print("found signatures in",time.time()-fst)
+
     blob_index=2
     top_n=3
-    if args.recognize:        
-        print("symbols found=",l.recognize_symbols(blob_index,top_n))
+    if args.recognize:
+        rt=time.time()
+        print("symbols found=",l.recognize(blob_index,top_n))
+        print("recognize time=",time.time()-rt)
     if args.learn:
-        print("learning",sign_name,l.learn(blob_index,sign_name))
+        lt=time.time()
+        print("learning",sign_name,len(l.learn(blob_index,sign_name)))
+        print("learn time=",time.time()-lt)
         l.write_know_base()  
     
     print("Finished in total of",time.time()-start_time,"seconds at",float(1/(time.time()-start_time)),"fps.")
