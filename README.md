@@ -41,7 +41,7 @@ This is a demo of pattern recognition achieved using data abstraction.<br>
 3. Recognition
    Usage: ```python3 pyrebel_main_learn.py --recognize <filename>```<br>
    For example running
-   ```python3 pyrebel_main_learn.py --recognize images/recognize.png``` displays the symbols recognized.
+   ```python3 pyrebel_main_learn.py --recognize images/recognize.png``` displays the symbols recognized in the file 'images/recognize.png'.
    
 To reset the knowledge base just delete file 'know_base.pkl' in the current working directory.
 The program expects a single pattern in the input image. Otherwise, a pattern has to be selected by changing variable 'blob_index' accordingly.
