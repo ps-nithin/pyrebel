@@ -14,7 +14,7 @@ A pure python library that implements abstraction of data.<br><br>
 Demo programs are found in 'demo/' directory.<br>
 ```cd demo/```
 
-# Image abstraction demo
+# 1. Image abstraction demo
 Usage:<br>
 ```python3 pyrebel_main.py --input <filename.png>```<br><br>
 Optional arguments<br>
@@ -23,7 +23,7 @@ For example,<br>
 ```python3 pyrebel_main.py --input images/abc.png --threshold 10```<br><br>
 The output is written to 'output.png'
 
-# Edge detection demo
+# 2. Edge detection demo
 This is a demo of edge detection achieved using data abstraction.<br>
 ```python3 pyrebel_main_edge.py --input <filename>```<br>
 For eq.
@@ -32,7 +32,7 @@ The output is written to 'output.png'.
 Below is a sample input image,<br><br>
 <img src="images/small_wildlife.jpg"></img><br>Below is the output image,<br><br><img src="images/output_wildlife.png"></img>
 
-# Pattern recognition demo
+# 3. Pattern recognition demo
 This is a demo of pattern recognition achieved using data abstraction.<br>
 1. Learning<br>
    Usage: ```python3 pyrebel_main_learn.py --learn /path/to/image/directory/```<br>
