@@ -11,6 +11,7 @@ A pure python library that implements abstraction of data.<br><br>
 ```python3 -m pip install .```<br>
 
 # Running demo programs
+Demo programs are found in 'demo/' directory.
 ```cd demo/```
 
 # Image abstraction demo
