@@ -37,7 +37,7 @@ This is a demo of pattern recognition achieved using data abstraction.<br>
 1. Learning<br><br>
    Usage: ```python3 pyrebel_main_learn.py --learn /path/to/image/directory/```<br><br>
    For example running ```python3 pyrebel_main_learn.py --learn images/train-hand/``` learns all the images
-   in the directory and links the filename with the signatures.<br>
+   in the directory and links the filename with the signatures.<br><br>
 2. Recognition<br><br>
    Usage: ```python3 pyrebel_main_learn.py --recognize <filename>```<br><br>
    For example running ```python3 pyrebel_main_learn.py --recognize images/recognize.png``` displays the
