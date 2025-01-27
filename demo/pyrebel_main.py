@@ -91,3 +91,4 @@ while 1:
     # Save the output to disk.
     Image.fromarray(out_image_h).convert('RGB').save("output.png")
     print("Finished in total of",time.time()-start_time,"seconds at",float(1/(time.time()-start_time)),"fps.")
+    break
