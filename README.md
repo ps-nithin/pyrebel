@@ -48,4 +48,5 @@ The program expects a single pattern in the input image. Otherwise, a pattern ha
 
 # Docs <a href="https://github.com/ps-nithin/pyrebel/blob/main/docs/DOCS.md">here</a>
 # Read more about abstraction <a href="https://github.com/ps-nithin/pyrebel/blob/main/docs/intro-r2.pdf">here</a>
+# Discussions <a href="https://github.com/ps-nithin/pyrebel/discussions">here</a>
 # Let the data shine!
