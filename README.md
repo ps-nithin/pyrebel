@@ -42,7 +42,7 @@ Optional arguments for tweaking the result,<br>
    2. ```--abs_threshold <value>``` (Defaults to 10)
    3. ```--bound_size <value>``` (Defaults to 100)
 Below is a sample input image,<br><br>
-<img src="images/small_lotus.jpg"></img><br>Below is the output image,<br><br><img src="images/output_lotus.png"></img>
+<img src="https://github.com/ps-nithin/pyrebel/raw/0ffc49de07c814862d26468ccf95e34a3afba50b/images/small_lotus.jpg"></img><br>Below is the output image,<br><br><img src="https://github.com/ps-nithin/pyrebel/raw/0ffc49de07c814862d26468ccf95e34a3afba50b/images/output_lotus.png"></img>
 
 ## 4. Pattern recognition demo
 This is a demo of pattern recognition achieved using data abstraction.<br>
