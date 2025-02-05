@@ -41,7 +41,7 @@ Optional arguments for tweaking the result,<br>
    1. ```--edge_threshold <value>``` (Defaults to 5)
    2. ```--abs_threshold <value>``` (Defaults to 10)
    3. ```--bound_size <value>``` (Defaults to 100)<br><br>
-Below is a sample input image,<br>
+Below is a sample input image,<br><br>
 <img src="https://github.com/ps-nithin/pyrebel/raw/0ffc49de07c814862d26468ccf95e34a3afba50b/images/small_lotus.jpg"></img><br>Below is the output image,<br><br><img src="https://github.com/ps-nithin/pyrebel/raw/0ffc49de07c814862d26468ccf95e34a3afba50b/images/output_lotus.png"></img>
 
 ## 4. Pattern recognition demo
