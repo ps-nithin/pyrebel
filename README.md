@@ -20,7 +20,7 @@ Usage:<br>
 Optional arguments<br>
 ```--abs_threshold <value>``` Selects the threshold of abstraction. Defaults to 5.<br><br>
 For example,<br>
-```python3 pyrebel_main.py --input images/abc.png --threshold 10```<br><br>
+```python3 pyrebel_main.py --input images/abc.png --abs_threshold 10```<br><br>
 The output is written to 'output.png'
 
 ## 2. Edge detection demo
