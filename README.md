@@ -33,7 +33,7 @@ For example,<br>
    Below is a sample input image,<br><br>
    <img src="https://github.com/ps-nithin/pyrebel/raw/c3ee0182aa5646a834d1e8c1f18c30d5bacd378d/images/small_wildlife.jpg"></img><br>Below is the output image,<br><br><img src="https://github.com/ps-nithin/pyrebel/raw/223e442aa8cdc34972f5c37d7a91240f725b7beb/images/output_wildlife.png"></img>
 
-## 3. Image abstraction based on edge detection
+## 3. Image abstraction following edge detection
 This is a demo of image abstraction achived using edge detection.<br>
 Usage:<br>
 ```python3 pyrebel_main_vision.py --input <filename>```<br><br>
