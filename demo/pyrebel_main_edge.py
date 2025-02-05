@@ -32,12 +32,12 @@ from pyrebel.utils import *
 
 parser=argparse.ArgumentParser()
 parser.add_argument("-i","--input",help="Input file name.")
-parser.add_argument("-t","--threshold",help="Threshold of abstraction.")
+parser.add_argument("-t","--edge_threshold",help="Threshold of abstraction.")
 args=parser.parse_args()
-if args.threshold:
-    abs_threshold=int(args.threshold)
+if args.edge_threshold:
+    edge_threshold=int(args.edge_threshold)
 else:
-    abs_threshold=10
+    edge_threshold=5
  
 while 1:
     start_time=time.time()    
@@ -47,8 +47,8 @@ while 1:
         print("No input file.")
     
     
-    edge=Edge(img_array,abs_threshold)
-    edge.find_edges()
+    edge=Edge(img_array)
+    edge.find_edges(edge_threshold)
     edges=edge.get_edges()  # Or edges=edge.get_edges_bw() for black and white.
     
     # Save the output to disk.

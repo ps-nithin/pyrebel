@@ -215,10 +215,10 @@ def winding_number_kernel(polygon,bound_data_ordered_d,img_array_d,winding_out_i
         winding_number = 0
         
         for i in range(polygon.shape[0]):
-            p1=bound_data_ordered_d[polygon[i]-1]
+            p1=bound_data_ordered_d[polygon[i]]
             x1=p1%winding_out_img_d.shape[1]
             y1=int(p1/winding_out_img_d.shape[1])
-            p2=bound_data_ordered_d[polygon[(i + 1) % polygon.shape[0]]-1]  # Next vertex (wraps around)
+            p2=bound_data_ordered_d[polygon[(i + 1) % polygon.shape[0]]]  # Next vertex (wraps around)
             x2=p2%winding_out_img_d.shape[1]
             y2=int(p2/winding_out_img_d.shape[1])
 
@@ -279,3 +279,14 @@ def quantize_img(img_array_d,img_quantized_d,quant_size):
         color=img_array_d[r][c]
         color_quant=int(round(color/quant_size))*quant_size
         img_quantized_d[r][c]=color_quant
+
+@cuda.jit
+def scale_down_pixels(orig_pixels_d,pixels_d,orig_shape_d,shape_d,scale_d):
+    ci=cuda.grid(1)
+    if ci<len(pixels_d):
+        r_orig=int(orig_pixels_d[ci]/orig_shape_d[1])
+        c_orig=orig_pixels_d[ci]%orig_shape_d[1]
+        r=int(r_orig/scale_d)
+        c=int(c_orig/scale_d)
+        pixels_d[ci]=r*shape_d[1]+c
+   

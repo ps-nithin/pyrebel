@@ -59,7 +59,7 @@ def find_ba_max_pd(nz_ba_d,nz_ba_size_d,bound_data_ordered_d,ba_max_pd_d,scaled_
     """
 
 @cuda.jit
-def find_next_ba(ba_max_pd_d,nz_ba_size_d,nz_ba_size_cum_d,bound_abstract_d,ba_threshold):
+def find_next_ba(ba_max_pd_d,nz_ba_size_d,nz_ba_size_cum_d,bound_abstract_d,ba_threshold,pd):
     ci=cuda.grid(1)
     if ci<len(nz_ba_size_d):
         n=nz_ba_size_cum_d[ci]
@@ -77,7 +77,8 @@ def find_next_ba(ba_max_pd_d,nz_ba_size_d,nz_ba_size_cum_d,bound_abstract_d,ba_t
     cuda.syncthreads()
     if d_max>ba_threshold:
         bound_abstract_d[d_max_i]=d_max_i
-        nz_ba_size_d[ci]+=1    
+        nz_ba_size_d[ci]+=1
+        pd[0]=d_max
 
 @cuda.jit
 def find_next_ba_all(ba_max_pd_d,nz_ba_size_d,nz_ba_size_cum_d,bound_abstract_d,ba_threshold):
@@ -164,7 +165,7 @@ def angle_diff(a,b):
 
 
 class Abstract:
-    def __init__(self,bound_data_ordered_h,n_bounds,bound_abstract_h,shape_h,is_closed,ba_threshold_pre):
+    def __init__(self,bound_data_ordered_h,n_bounds,bound_abstract_h,shape_h,is_closed):
         # Inputs
         self.bound_data_ordered_h=bound_data_ordered_h
         self.n_bounds=n_bounds
@@ -172,8 +173,8 @@ class Abstract:
         self.bound_abstract_h=bound_abstract_h
         self.shape_h=shape_h
         self.is_closed=is_closed
-        self.ba_threshold_pre=ba_threshold_pre
- 
+        self.pd=np.full(1,np.inf,dtype=np.float32)
+        self.pd_change=0
         if is_closed:
             self.ba_size_pre_hor=np.full(n_bounds,3,dtype=np.int32)
             self.pre_count=3
@@ -181,10 +182,10 @@ class Abstract:
             self.ba_size_pre_hor=np.full(n_bounds,2,dtype=np.int32)
             self.pre_count=2
  
-        self.nz_ba_pre_hor=[]
+        self.nz_ba_pre_hor=get_non_zeros(bound_abstract_h)
         self.ba_sign_pre_h=[]
         
-    def do_abstract_all(self):
+    def do_abstract_all(self,ba_threshold_pre):
         bound_data_ordered_d=cuda.to_device(self.bound_data_ordered_h)
         bound_abstract_pre_d=cuda.to_device(self.bound_abstract_h)
         shape_d=cuda.to_device(self.shape_h)
@@ -205,7 +206,7 @@ class Abstract:
             find_ba_max_pd[len(nz_ba_pre_hor),1](nz_ba_pre_hor_d,ba_size_pre_hor_d,bound_data_ordered_d,ba_max_pd_pre_d,shape_d)
             cuda.synchronize()
             ba_max_pd_pre_h=ba_max_pd_pre_d.copy_to_host()
-            find_next_ba_all[len(self.ba_size_pre_hor),1](ba_max_pd_pre_d,ba_size_pre_hor_d,ba_size_cum_pre_hor_d,bound_abstract_pre_d,self.ba_threshold_pre)
+            find_next_ba_all[len(self.ba_size_pre_hor),1](ba_max_pd_pre_d,ba_size_pre_hor_d,ba_size_cum_pre_hor_d,bound_abstract_pre_d,ba_threshold_pre)
             cuda.synchronize()
 
 
@@ -241,7 +242,7 @@ class Abstract:
         self.ba_sign_pre_h=ba_sign_pre_h
         self.bound_abstract_h=bound_abstract_pre_h
         
-    def do_abstract_one(self):
+    def do_abstract_one(self,ba_threshold_pre):
         is_final=False
         bound_data_ordered_d=cuda.to_device(self.bound_data_ordered_h)
         bound_abstract_pre_d=cuda.to_device(self.bound_abstract_h)
@@ -258,13 +259,14 @@ class Abstract:
         ba_max_pd_pre_d=cuda.to_device(ba_max_pd_pre)
         ba_size_cum_pre_old_hor=ba_size_cum_pre_hor_[-1]
         #pre_count=self.pre_count
+        pd=np.zeros(1,dtype=np.float32)
+        pd_d=cuda.to_device(pd)
         while 1:
             find_ba_max_pd[len(nz_ba_pre_hor),1](nz_ba_pre_hor_d,ba_size_pre_hor_d,bound_data_ordered_d,ba_max_pd_pre_d,shape_d)
             cuda.synchronize()
             ba_max_pd_pre_h=ba_max_pd_pre_d.copy_to_host()
-            find_next_ba[len(self.ba_size_pre_hor),1](ba_max_pd_pre_d,ba_size_pre_hor_d,ba_size_cum_pre_hor_d,bound_abstract_pre_d,self.ba_threshold_pre)
+            find_next_ba[len(self.ba_size_pre_hor),1](ba_max_pd_pre_d,ba_size_pre_hor_d,ba_size_cum_pre_hor_d,bound_abstract_pre_d,ba_threshold_pre,pd_d)
             cuda.synchronize()
-
 
             bound_abstract_pre_h=bound_abstract_pre_d.copy_to_host()
             nz_ba_pre_hor=get_non_zeros(bound_abstract_pre_h)
@@ -304,8 +306,23 @@ class Abstract:
     def get_sign(self):
         return self.ba_sign_pre_h
     
+    def reset_abstract(self):
+        if self.is_closed:
+            self.ba_size_pre_hor=np.full(self.n_bounds,3,dtype=np.int32)
+            self.pre_count=3
+        else:
+            self.ba_size_pre_hor=np.full(self.n_bounds,2,dtype=np.int32)
+            self.pre_count=2
+        self.bound_abstract_h=self.init_bound_abstract_h
+        self.nz_ba_pre_hor=get_non_zeros(self.init_bound_abstract_h)
+        self.ba_sign_pre_h=[]
+        
     def get_abstract(self):
         return self.nz_ba_pre_hor
     
-    def get_bound_size(self):
+    def get_pd_change(self):
+        return self.pd_change
+    def get_pd(self):
+        return self.pd
+    def get_abstract_size(self):
         return self.ba_size_pre_hor

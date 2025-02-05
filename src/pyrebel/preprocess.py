@@ -249,7 +249,7 @@ def get_bound_data_order(nz_a_max_dist,nz_si_cum_d,tmp_img,init_bound_abstract,b
         c=x
         color=tmp_img[r][c]
         n=nz_si_cum_d[ci]
-        init_n=n+1
+        init_n=ci
         init_bound_abstract[n]=n+1
         bound_threshold_d[n]=threshold
         bound_mark_d[n]=init_n
@@ -318,9 +318,11 @@ class Preprocess:
         self.bound_len_low=64
         self.bound_len_high=img_array.shape[0]*img_array.shape[1]*9
         self.nz_s=[]
+        self.nz_a=[]
         self.bound_data_ordered_h=[]
         self.bound_abstract_h=[]
-
+        self.img_scaled_h=[]
+        self.bound_mark_h=[]
         
     def preprocess_image(self):
         img_array_d=cuda.to_device(self.img_array)
@@ -336,7 +338,7 @@ class Preprocess:
         img_scaled_d=cuda.device_array(scaled_shape,dtype=np.int32)
         scale_img_cuda[blockspergrid,threadsperblock](img_fenced_d,img_scaled_d)
         cuda.synchronize()
-        img_scaled_h=img_scaled_d.copy_to_host()
+        self.img_scaled_h=img_scaled_d.copy_to_host()
         
         threadsperblock=(16,16)
         blockspergrid_x=math.ceil(scaled_shape[0]/threadsperblock[0])
@@ -360,17 +362,17 @@ class Preprocess:
         binfo=bound_info_d.copy_to_host()
         a=binfo.transpose()[0]
         s=binfo.transpose()[1]
-        nz_a=get_non_zeros(a)
+        self.nz_a=get_non_zeros(a)
         self.nz_s=get_non_zeros(s)
 
         
-        print("len(nz_s)=",len(self.nz_s))
+        #print("len(nz_s)=",len(self.nz_s))
         #nz=np.column_stack((nz_a,nz_s))
         #nz_sort=nz[nz[:,1].argsort()]
         nz_s_cum_=np.cumsum(self.nz_s)
         nz_s_cum=np.delete(np.insert(nz_s_cum_,0,0),-1)
         nz_s_cum_d=cuda.to_device(nz_s_cum)
-        nz_a_d=cuda.to_device(nz_a)
+        nz_a_d=cuda.to_device(self.nz_a)
         nz_s_d=cuda.to_device(self.nz_s)
 
         """
@@ -404,7 +406,7 @@ class Preprocess:
         nz_si_cum_d=cuda.to_device(nz_si_cum)
 
         bound_data_d=cuda.device_array([nz_s_cum_[-1]],dtype=np.int32)
-        get_bound_data_init[math.ceil(len(nz_a)/256),256](nz_a_d,nz_s_cum_d,img_boundary_d,bound_data_d)
+        get_bound_data_init[math.ceil(len(self.nz_a)/256),256](nz_a_d,nz_s_cum_d,img_boundary_d,bound_data_d)
         cuda.synchronize()
 
         dist_data_d=cuda.device_array([nz_s_cum_[-1]],dtype=np.float64)
@@ -423,21 +425,31 @@ class Preprocess:
         bound_threshold_d=cuda.to_device(bound_threshold)
         ba_size=np.zeros([nz_si_cum_[-1]],dtype=np.int32)
         ba_size_d=cuda.to_device(ba_size)
-        get_bound_data_order[math.ceil(len(nz_a)/256),256](max_dist_d,nz_si_cum_d,img_boundary_d,bound_abstract_d,bound_data_ordered_d,bound_threshold_d,bound_mark_d,ba_size_d,5)
+        get_bound_data_order[math.ceil(len(self.nz_a)/256),256](max_dist_d,nz_si_cum_d,img_boundary_d,bound_abstract_d,bound_data_ordered_d,bound_threshold_d,bound_mark_d,ba_size_d,5)
         cuda.synchronize()
         self.bound_data_ordered_h=bound_data_ordered_d.copy_to_host()
         self.bound_abstract_h=bound_abstract_d.copy_to_host()
+        self.bound_mark_h=bound_mark_d.copy_to_host()    
         
-        
-    def set_bound_size(self,min_size,max_size):
-        self.bound_len_low=min_size
-        self.bound_len_high=max_size
+    def set_bound_size(self,min_size=False,max_size=False):
+        if min_size:
+            self.bound_len_low=min_size
+        if max_size:
+            self.bound_len_high=max_size
     
     def get_bound_size(self):
         return self.nz_s
+    def get_bound_seed(self):
+        return self.nz_a
+        
+    def get_image_scaled(self):
+        return self.img_scaled_h
         
     def get_bound_data(self):
         return self.bound_data_ordered_h
+    
+    def get_bound_mark(self):
+        return self.bound_mark_h
     
     def get_init_abstract(self):
         return self.bound_abstract_h

@@ -69,7 +69,7 @@ while 1:
     # Initialize the preprocessing class.
     pre=Preprocess(img_array)
     # Set the minimum and maximum size of boundaries of blobs in the image. Defaults to a minimum of 64.
-    pre.set_bound_size(32,50000000)    
+    pre.set_bound_size(32)    
     # Perform the preprocessing to get 1D array containing boundaries of blobs in the image.
     pre.preprocess_image()
     # Get the 1D array.
@@ -83,7 +83,7 @@ while 1:
     scaled_shape=[img_array.shape[0]*3,img_array.shape[1]*3]
     
     # Initialize the abstraction class
-    abs=Abstract(bound_data,len(bound_size),init_bound_abstract,scaled_shape,True,abs_threshold)
+    abs=Abstract(bound_data,len(bound_size),init_bound_abstract,scaled_shape,True)
     
     n_layers=30
     # Initialize learning class
@@ -93,9 +93,9 @@ while 1:
     fst=time.time()
     while 1:
         # Do one layer of abstraction
-        abs.do_abstract_one()
+        abs.do_abstract_one(abs_threshold)
         ba_sign=abs.get_sign()
-        ba_size=abs.get_bound_size()
+        ba_size=abs.get_abstract_size()
         # Find signatures for the layer    
         is_finished=l.find_signatures2(ba_sign,ba_size)    
         if is_finished:

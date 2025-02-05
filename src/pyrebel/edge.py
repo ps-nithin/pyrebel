@@ -19,17 +19,15 @@ import math
 import numpy as np
 
 class Edge:
-    def __init__(self,img_array,threshold,invert=-1):
+    def __init__(self,img_array,invert=-1):
         self.img_array_orig=img_array
-        self.threshold=threshold
         self.invert_arg=invert
         self.out_image_hor_h=[]
         self.final_image_h=[]
         
-    def find_edges(self):
+    def find_edges(self,abs_threshold):
         img_array=self.img_array_orig
         shape_orig=self.img_array_orig.shape
-        abs_threshold=self.threshold
         i=0
         while 1:
             threadsperblock=(16,16)
@@ -85,10 +83,10 @@ class Edge:
             init_bound_abstract_h=init_bound_abstract_d.copy_to_host()
             
             # Initialize the abstraction class
-            abs45=Abstract(img_wave45_h,img_rot45_h.shape[0],init_bound_abstract_h,img_rot45_h.shape,False,abs_threshold)
+            abs45=Abstract(img_wave45_h,img_rot45_h.shape[0],init_bound_abstract_h,img_rot45_h.shape,False)
             
             # Get the abstract points
-            abs45.do_abstract_all()
+            abs45.do_abstract_all(abs_threshold)
             abs_points45=abs45.get_abstract()
             
             # Get the convexity array.
@@ -164,10 +162,10 @@ class Edge:
             init_bound_abstract_h=init_bound_abstract_d.copy_to_host()
 
             # Initialize the abstraction class
-            abs=Abstract(img_wave_h,img_array.shape[0],init_bound_abstract_h,img_array.shape,False,abs_threshold)
+            abs=Abstract(img_wave_h,img_array.shape[0],init_bound_abstract_h,img_array.shape,False)
             
             # Get the abstract points
-            abs.do_abstract_all()
+            abs.do_abstract_all(abs_threshold)
             abs_points=abs.get_abstract()
             
             # Get the convexity array.
@@ -219,7 +217,7 @@ class Edge:
         img_array_orig_d=cuda.to_device(self.img_array_orig)
         final_image=np.zeros(self.img_array_orig.shape,dtype=np.int32)
         final_image_d=cuda.to_device(final_image)
-        clone_image2[blockspergrid,threadsperblock](img_array_orig_d,out_image_hor_d,final_image_d,not invert45)
+        clone_image2[blockspergrid,threadsperblock](img_array_orig_d,out_image_hor_d,final_image_d,not self.invert_arg)
         cuda.synchronize()
         self.final_image_h=final_image_d.copy_to_host()
         

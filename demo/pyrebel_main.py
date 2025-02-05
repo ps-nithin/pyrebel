@@ -28,10 +28,10 @@ from pyrebel.utils import *
 
 parser=argparse.ArgumentParser()
 parser.add_argument("-i","--input",help="Input file name.")
-parser.add_argument("-t","--threshold",help="Threshold of abstraction.")
+parser.add_argument("-t","--abs_threshold",help="Threshold of abstraction.")
 args=parser.parse_args()
-if args.threshold:
-    abs_threshold=int(args.threshold)
+if args.abs_threshold:
+    abs_threshold=int(args.abs_threshold)
 else:
     abs_threshold=5
         
@@ -46,13 +46,14 @@ while 1:
     pre=Preprocess(img_array)
     
     # Set the minimum and maximum size of boundaries of blobs in the image. Defaults to a minimum of 64.
-    pre.set_bound_size(32,50000000)
+    pre.set_bound_size(32)
     
     # Perform the preprocessing to get 1D array containing boundaries of blobs in the image.
     pre.preprocess_image()
     
     # Get the 1D array.
     bound_data=pre.get_bound_data()
+    bound_data_d=cuda.to_device(bound_data)
     
     # Initialize the abstract boundary.
     init_bound_abstract=pre.get_init_abstract()
@@ -60,32 +61,37 @@ while 1:
     # Get 1D array containing size of boundaries of blobs in the array.
     bound_size=pre.get_bound_size()
     print("len(bound_data)=",len(bound_data))
-
+    
+    shape_d=cuda.to_device(img_array.shape)
     scaled_shape=[img_array.shape[0]*3,img_array.shape[1]*3]
+    scaled_shape_d=cuda.to_device(scaled_shape)
+    
+    bound_data_orig=np.zeros(len(bound_data),dtype=np.int32)
+    bound_data_orig_d=cuda.to_device(bound_data_orig)
+    
+    scale_down_pixels[len(bound_data),1](bound_data_d,bound_data_orig_d,scaled_shape_d,shape_d,3)
+    cuda.synchronize()
     
     # Initialize the abstraction class
-    abs=Abstract(bound_data,len(bound_size),init_bound_abstract,scaled_shape,True,abs_threshold)
+    abs=Abstract(bound_data,len(bound_size),init_bound_abstract,scaled_shape,True)
     
     # Get the abstract points
-    abs.do_abstract_all()
+    abs.do_abstract_all(abs_threshold)
     abs_points=abs.get_abstract()
     
-    bounds_draw=decrement_by_one_cuda(bound_data)
-    bounds_draw_d=cuda.to_device(bounds_draw)
-
     abs_draw=decrement_by_one_cuda(abs_points)
     abs_draw_d=cuda.to_device(abs_draw)
 
-    out_image=np.zeros(scaled_shape,dtype=np.int32)
+    out_image=np.zeros(img_array.shape,dtype=np.int32)
     out_image_d=cuda.to_device(out_image)
 
     # Draw the boundaries to the output image.
-    draw_pixels_cuda(bounds_draw_d,50,out_image_d)
-
-    bound_data_d=cuda.to_device(bound_data)
+    draw_pixels_cuda(bound_data_orig_d,50,out_image_d)
+    draw_lines[len(abs_draw),1](abs_draw_d,bound_data_orig_d,out_image_d,125)
+    cuda.synchronize()
     
     # Draw the abstract points to the output image.
-    draw_pixels_from_indices_cuda(abs_draw_d,bound_data_d,255,out_image_d)
+    draw_pixels_from_indices_cuda(abs_draw_d,bound_data_orig_d,255,out_image_d)
     out_image_h=out_image_d.copy_to_host()
     
     # Save the output to disk.
