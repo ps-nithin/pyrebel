@@ -18,7 +18,7 @@ Demo programs are found in 'demo/' directory.<br>
 Usage:<br>
 ```python3 pyrebel_main.py --input <filename.png>```<br><br>
 Optional arguments<br>
-```--threshold <value>``` Selects the threshold of abstraction. Defaults to 5.<br><br>
+```--abs_threshold <value>``` Selects the threshold of abstraction. Defaults to 5.<br>
 For example,<br>
 ```python3 pyrebel_main.py --input images/abc.png --threshold 10```<br><br>
 The output is written to 'output.png'
