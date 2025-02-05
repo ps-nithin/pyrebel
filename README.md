@@ -36,7 +36,7 @@ Below is a sample input image,<br><br>
 ## 3. Image abstraction based on edge detection
 This is a demo of image abstraction achived using edge detection.<br>
 Usage:<br>
-```python3 pyrebel_main_vision.py --input <filename>```<br>
+```python3 pyrebel_main_vision.py --input <filename>```<br><br>
 Optional arguments for tweaking the result,<br>
    1. ```--edge_threshold <value>``` (Defaults to 5)
    2. ```--abs_threshold <value>``` (Defaults to 10)
