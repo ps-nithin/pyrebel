@@ -38,9 +38,9 @@ This is a demo of image abstraction achived using edge detection.<br>
 Usage:<br>
 ```python3 pyrebel_main_vision.py --input <filename>```<br><br>
 Optional arguments for tweaking the result,<br>
-   1. ```--edge_threshold <value>``` (Defaults to 5)
-   2. ```--abs_threshold <value>``` (Defaults to 10)
-   3. ```--bound_size <value>``` (Defaults to 100)<br><br>
+   1. ```--edge_threshold <value>``` Selects the threshold of edge detection.(Defaults to 5)
+   2. ```--abs_threshold <value>``` Selects the threshold of output abstraction. (Defaults to 10)
+   3. ```--bound_size <value>``` Selects the minimum size of boundaries. (Defaults to 100)<br><br>
 Below is a sample input image,<br><br>
 <img src="https://github.com/ps-nithin/pyrebel/raw/0ffc49de07c814862d26468ccf95e34a3afba50b/images/small_lotus.jpg"></img><br>Below is the output image,<br><br><img src="https://github.com/ps-nithin/pyrebel/raw/0ffc49de07c814862d26468ccf95e34a3afba50b/images/output_lotus.png"></img>
 
