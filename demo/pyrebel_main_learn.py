@@ -21,11 +21,9 @@ from pyrebel.abstract import Abstract
 from pyrebel.learn import Learn
 from pyrebel.utils import *
 
-# This is a demo of abstraction of boundaries of blobs in the image.
-# When you run this program the output is written to 'output.png'.
-# The boundaries of blobs is in grey color and the abstract points are in white.
-# The level of abstraction can be changed by giving '--threshold' argument. 
-# The default value of threshold is 5.
+# This is a demo of learning and recognizing of patterns using 
+# abstraction of data.
+#
 
 parser=argparse.ArgumentParser()
 parser.add_argument("-i","--input",help="Input file name.")

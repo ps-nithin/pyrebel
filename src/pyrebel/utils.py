@@ -237,10 +237,10 @@ def winding_number_kernel(polygon,bound_data_ordered_d,img_array_d,winding_out_i
 
 
 @cuda.jit
-def draw_lines(nz_ba_d,bound_data_ordered_d,out_image_d,color):
+def draw_lines(nz_ba_d,nz_ba_size_d,bound_data_ordered_d,bound_mark_d,out_image_d,color,min_size):
     ci=cuda.grid(1)
     if ci<len(nz_ba_d)-1:
-        if (nz_ba_d[ci]+1)==nz_ba_d[ci+1]:
+        if (nz_ba_d[ci]+1)==nz_ba_d[ci+1] or nz_ba_size_d[bound_mark_d[nz_ba_d[ci]]]<min_size+1:
             return
         a=bound_data_ordered_d[nz_ba_d[ci]]
         b=bound_data_ordered_d[nz_ba_d[ci+1]]

@@ -23,11 +23,11 @@ from pyrebel.utils import *
 
 # This is a demo of edge detection using abstraction of data.
 # When you run this program the output is written to 'output.png'.
-# The level of abstraction can be changed by giving '--threshold' argument. 
+# The level of abstraction can be changed by giving '--edge_threshold' argument. 
 # The default value of threshold is 5.
 #
-# The edges are detected by abstracting the image horizontally and vertically. Then, they are
-# combined to get the final result.
+# The edges are detected by abstracting the image horizontally,vertically and
+# diagonally. Then, they are combined to get the final result.
 #
 
 parser=argparse.ArgumentParser()

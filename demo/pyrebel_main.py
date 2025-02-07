@@ -54,6 +54,8 @@ while 1:
     # Get the 1D array.
     bound_data=pre.get_bound_data()
     bound_data_d=cuda.to_device(bound_data)
+    bound_mark=pre.get_bound_mark()
+    bound_mark_d=cuda.to_device(bound_mark)
     
     # Initialize the abstract boundary.
     init_bound_abstract=pre.get_init_abstract()
@@ -78,6 +80,8 @@ while 1:
     # Get the abstract points
     abs.do_abstract_all(abs_threshold)
     abs_points=abs.get_abstract()
+    abs_size=abs.get_abstract_size()
+    abs_size_d=cuda.to_device(abs_size)
     
     abs_draw=decrement_by_one_cuda(abs_points)
     abs_draw_d=cuda.to_device(abs_draw)
@@ -87,7 +91,7 @@ while 1:
 
     # Draw the boundaries to the output image.
     draw_pixels_cuda(bound_data_orig_d,50,out_image_d)
-    draw_lines[len(abs_draw),1](abs_draw_d,bound_data_orig_d,out_image_d,125)
+    draw_lines[len(abs_draw),1](abs_draw_d,abs_size_d,bound_data_orig_d,bound_mark_d,out_image_d,100,3)
     cuda.synchronize()
     
     # Draw the abstract points to the output image.

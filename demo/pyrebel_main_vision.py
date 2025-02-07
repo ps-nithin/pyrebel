@@ -71,6 +71,8 @@ while 1:
     # Get the 1D array.
     bound_data=pre.get_bound_data()
     bound_data_d=cuda.to_device(bound_data)
+    bound_mark=pre.get_bound_mark()
+    bound_mark_d=cuda.to_device(bound_mark)
     # Initialize the abstract boundary.
     init_bound_abstract=pre.get_init_abstract()
     
@@ -91,10 +93,7 @@ while 1:
     abs_points=abs.get_abstract()
     abs_size=abs.get_abstract_size()
     abs_size_d=cuda.to_device(abs_size)
-    abs_size_cum_=np.cumsum(abs_size)
-    abs_size_cum=np.delete(np.insert(abs_size_cum_,0,0),-1)
-    abs_size_cum_d=cuda.to_device(abs_size_cum)    
-    
+
     abs_draw=decrement_by_one_cuda(abs_points)
     abs_draw_d=cuda.to_device(abs_draw)
     
@@ -107,7 +106,7 @@ while 1:
     scale_down_pixels[len(bound_data),1](bound_data_d,bound_data_orig_d,scaled_shape_d,shape_d,3)
     cuda.synchronize()
     
-    draw_lines[len(abs_draw),1](abs_draw_d,bound_data_orig_d,out_image_d,0)
+    draw_lines[len(abs_draw),1](abs_draw_d,abs_size_d,bound_data_orig_d,bound_mark_d,out_image_d,0,3)
     cuda.synchronize()
     
     out_image_h=out_image_d.copy_to_host()
