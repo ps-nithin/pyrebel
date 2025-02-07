@@ -33,18 +33,18 @@ For example,<br>
    Below is a sample input image,<br><br>
    <img src="https://github.com/ps-nithin/pyrebel/raw/c3ee0182aa5646a834d1e8c1f18c30d5bacd378d/images/small_wildlife.jpg"></img><br>Below is the output image,<br><br><img src="https://github.com/ps-nithin/pyrebel/raw/223e442aa8cdc34972f5c37d7a91240f725b7beb/images/output_wildlife.png"></img>
 
-## 3. Image abstraction based on edge detection
-This is a demo of image abstraction achived using edge detection.<br>
+## 3. 2D sketch demo
+This is a demo of 2D sketch formation using data abstraction.<br>
 Usage:<br>
 ```python3 pyrebel_main_vision.py --input <filename>```<br><br>
 Optional arguments for tweaking the result,<br>
    1. ```--edge_threshold <value>``` Selects the threshold of edge detection.(Defaults to 5)
    2. ```--abs_threshold <value>``` Selects the threshold of output abstraction. (Defaults to 10)
-   3. ```--bound_size <value>``` Selects the minimum size of boundaries. (Defaults to 100)<br><br>
+   3. ```--bound_threshold <value>``` Selects the threshold of boundary size. (Defaults to 100)<br><br>
 For example,<br>
 ```python3 pyrebel_main_vision.py --input images/lotus.jpg```<br><br>
 Below is a sample input image,<br><br>
-<img src="https://github.com/ps-nithin/pyrebel/raw/0ffc49de07c814862d26468ccf95e34a3afba50b/images/small_lotus.jpg"></img><br>Below is the output image,<br><br><img src="https://github.com/ps-nithin/pyrebel/raw/0ffc49de07c814862d26468ccf95e34a3afba50b/images/output_lotus.png"></img>
+<img src="https://github.com/ps-nithin/pyrebel/raw/0ffc49de07c814862d26468ccf95e34a3afba50b/images/small_lotus.jpg"></img><br>Below is the output image,<br><br><img src="https://github.com/ps-nithin/pyrebel/raw/25212f87e81954a884a80386bea1bb46e931cfe6/images/output_lotus.png"></img>
 
 ## 4. Pattern recognition demo
 This is a demo of pattern recognition achieved using data abstraction.<br>
