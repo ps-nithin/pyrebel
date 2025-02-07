@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pyrebel"
-version = "1.1.0"
+version = "1.1.1"
 dependencies = [
   "numpy",
   "numba",
@@ -12,10 +12,10 @@ dependencies = [
 ]
 requires-python = ">=3.8"
 authors = [
-  {name = "Nithin PS", email = "ps.nithin@proton.me"},
+  {name = "Nithin PS", email = "nithin.pulpra@gmail.com"},
 ]
 maintainers = [
-  {name = "Nithin PS", email = "ps.nithin@proton.me"}
+  {name = "Nithin PS", email = "nithin.pulpra@gmail.com"}
 ]
 description = "A pure python library that implements abstraction of data."
 readme = "README.md"
@@ -36,4 +36,4 @@ classifiers = [
 
 [project.urls]
 Homepage = "https://github.com/ps-nithin/pyrebel"
-Repository = "https://github.com/ps-nithin/pyrebel.git"
+Repository = "https://github.com/ps-nithin/pyrebel"

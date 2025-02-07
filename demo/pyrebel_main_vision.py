@@ -23,7 +23,7 @@ from pyrebel.edge import Edge
 from pyrebel.utils import *
 from pyrebel.getnonzeros import *     
         
-# This is a demo of cartoonization using abstraction of data.
+# This is a demo of forming 2D sketch using abstraction of data.
 # When you run this program the output is written to 'output.png'.
 #
 
@@ -31,7 +31,7 @@ parser=argparse.ArgumentParser()
 parser.add_argument("-i","--input",help="Input file name.")
 parser.add_argument("-at","--abs_threshold",help="Threshold of abstraction.")
 parser.add_argument("-et","--edge_threshold",help="Threshold of edge detection.")
-parser.add_argument("-s","--bound_size",help="Selects minimum size of boundaries.")
+parser.add_argument("-s","--bound_threshold",help="Threshold of boundary size.")
 args=parser.parse_args()
 
 if args.edge_threshold:
@@ -42,10 +42,10 @@ if args.abs_threshold:
     abs_threshold=int(args.abs_threshold)
 else:
     abs_threshold=10    
-if args.bound_size:
-    bound_size=int(args.bound_size)
+if args.bound_threshold:
+    bound_threshold=int(args.bound_threshold)
 else:
-    bound_size=100
+    bound_threshold=100
  
 while 1:
     start_time=time.time()    
@@ -65,7 +65,7 @@ while 1:
     # Initialize the preprocessing class.
     pre=Preprocess(edges)
     # Set the minimum and maximum size of boundaries of blobs in the image. Defaults to a minimum of 64.
-    pre.set_bound_size(bound_size)
+    pre.set_bound_size(bound_threshold)
     # Perform the preprocessing to get 1D array containing boundaries of blobs in the image.
     pre.preprocess_image()
     # Get the 1D array.
@@ -75,10 +75,10 @@ while 1:
     init_bound_abstract=pre.get_init_abstract()
     
     # Get 1D array containing size of boundaries of blobs in the array.
-    bound_size_arr=pre.get_bound_size()
+    bound_size=pre.get_bound_size()
 
     print("len(bound_data)=",len(bound_data))
-    print("n_blobs=",len(bound_size_arr))
+    print("n_blobs=",len(bound_size))
     
     scaled_image=pre.get_image_scaled()
     scaled_image_d=cuda.to_device(scaled_image)
@@ -86,7 +86,7 @@ while 1:
     scaled_shape_d=cuda.to_device(scaled_shape)
     
     # Initialize the abstraction class
-    abs=Abstract(bound_data,len(bound_size_arr),init_bound_abstract,scaled_shape,True)
+    abs=Abstract(bound_data,len(bound_size),init_bound_abstract,scaled_shape,True)
     abs.do_abstract_all(abs_threshold)
     abs_points=abs.get_abstract()
     abs_size=abs.get_abstract_size()
@@ -98,7 +98,7 @@ while 1:
     abs_draw=decrement_by_one_cuda(abs_points)
     abs_draw_d=cuda.to_device(abs_draw)
     
-    out_image=np.zeros(img_array.shape,dtype=np.int32)
+    out_image=np.full(img_array.shape,255,dtype=np.int32)
     out_image_d=cuda.to_device(out_image)
     
     bound_data_orig=np.zeros(len(bound_data),dtype=np.int32)
@@ -107,13 +107,7 @@ while 1:
     scale_down_pixels[len(bound_data),1](bound_data_d,bound_data_orig_d,scaled_shape_d,shape_d,3)
     cuda.synchronize()
     
-    bound_size_arr_sorted=bound_size_arr.argsort()[::-1]
-    for blob_i in bound_size_arr_sorted[1:]:
-        polygon=abs_draw[abs_size_cum[blob_i]:abs_size_cum[blob_i]+abs_size[blob_i]]
-        polygon_d=cuda.to_device(polygon)
-        winding_number_kernel[blockspergrid,threadsperblock](polygon_d,bound_data_orig_d,img_array_d,out_image_d)
-        cuda.synchronize()
-    draw_lines[len(abs_draw),1](abs_draw_d,bound_data_orig_d,out_image_d,125)
+    draw_lines[len(abs_draw),1](abs_draw_d,bound_data_orig_d,out_image_d,0)
     cuda.synchronize()
     
     out_image_h=out_image_d.copy_to_host()
