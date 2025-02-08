@@ -41,6 +41,7 @@ Optional arguments for tweaking the result,<br>
    1. ```--edge_threshold <value>``` Selects the threshold of edge detection.(Defaults to 5)
    2. ```--abs_threshold <value>``` Selects the threshold of output abstraction. (Defaults to 10)
    3. ```--bound_threshold <value>``` Selects the threshold of boundary size. (Defaults to 100)<br><br>
+
 For example,<br>
 ```python3 pyrebel_main_vision.py --input images/lotus.jpg```<br><br>
 Below is a sample input image,<br><br>
