@@ -67,7 +67,7 @@ def read_bound_cuda(img,img_boundary_d):
 def get_bound_cuda2(tmp_img,bound_len_low,bound_len_high,seed_map_d,bound_info):
     r,c=cuda.grid(2)
     # last=0,1,2,3 for n,e,s,w respectively
-    if r>0 and r<tmp_img.shape[0]-1 and c>0 and c<tmp_img.shape[1]-1 and tmp_img[r][c]!=500:
+    if r>0 and r<tmp_img.shape[0]-1 and r%3==0 and c>0 and c<tmp_img.shape[1]-1 and c%3==0 and tmp_img[r][c]!=500 and tmp_img[r][c-1]!=tmp_img[r][c+1] and tmp_img[r-1][c]!=tmp_img[r+1][c]:
         y=r
         x=c
         color=tmp_img[r][c]

@@ -47,6 +47,8 @@ if args.learn:
         learn_single=False
         ip_files=os.listdir(args.learn)
         ip_files_n=len(ip_files)
+
+init_time=time.time()
 while 1:
     start_time=time.time()    
     if args.input:
@@ -114,10 +116,13 @@ while 1:
         print("learn time=",time.time()-lt)
         l.write_know_base()  
     
-    print("Finished in total of",time.time()-start_time,"seconds at",float(1/(time.time()-start_time)),"fps.")
+    print("Finished in",time.time()-start_time,"seconds at",float(1/(time.time()-start_time)),"fps.")
     if args.learn:
         learn_n+=1
         if learn_n==ip_files_n:
             break
     if args.recognize:
         continue
+
+print("Finished in total of",time.time()-init_time,"seconds.")
+

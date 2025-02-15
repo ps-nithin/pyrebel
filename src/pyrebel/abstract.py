@@ -203,10 +203,10 @@ class Abstract:
         ba_size_cum_pre_old_hor=ba_size_cum_pre_hor_[-1]
         #pre_count=self.pre_count
         while 1:
-            find_ba_max_pd[len(nz_ba_pre_hor),1](nz_ba_pre_hor_d,ba_size_pre_hor_d,bound_data_ordered_d,ba_max_pd_pre_d,shape_d)
+            find_ba_max_pd[math.ceil(len(nz_ba_pre_hor)/32),32](nz_ba_pre_hor_d,ba_size_pre_hor_d,bound_data_ordered_d,ba_max_pd_pre_d,shape_d)
             cuda.synchronize()
             ba_max_pd_pre_h=ba_max_pd_pre_d.copy_to_host()
-            find_next_ba_all[len(self.ba_size_pre_hor),1](ba_max_pd_pre_d,ba_size_pre_hor_d,ba_size_cum_pre_hor_d,bound_abstract_pre_d,ba_threshold_pre)
+            find_next_ba_all[math.ceil(len(self.ba_size_pre_hor)/32),32](ba_max_pd_pre_d,ba_size_pre_hor_d,ba_size_cum_pre_hor_d,bound_abstract_pre_d,ba_threshold_pre)
             cuda.synchronize()
 
 
@@ -227,7 +227,7 @@ class Abstract:
                 ba_change_pre_d=cuda.to_device(ba_change_pre)
                 ba_sign_pre=np.zeros([len(nz_ba_pre_hor)],dtype=np.int32)
                 ba_sign_pre_d=cuda.to_device(ba_sign_pre)
-                find_change[len(nz_ba_pre_hor),1](ba_size_pre_hor_d,ba_size_cum_pre_hor_d,nz_ba_pre_hor_d,bound_data_ordered_d,shape_d,ba_change_pre_d,ba_sign_pre_d)
+                find_change[math.ceil(len(nz_ba_pre_hor)/32),32](ba_size_pre_hor_d,ba_size_cum_pre_hor_d,nz_ba_pre_hor_d,bound_data_ordered_d,shape_d,ba_change_pre_d,ba_sign_pre_d)
                 cuda.synchronize()
                 ba_change_pre_h=ba_change_pre_d.copy_to_host()
                 ba_sign_pre_h=ba_sign_pre_d.copy_to_host()
@@ -262,10 +262,10 @@ class Abstract:
         pd=np.zeros(1,dtype=np.float32)
         pd_d=cuda.to_device(pd)
         while 1:
-            find_ba_max_pd[len(nz_ba_pre_hor),1](nz_ba_pre_hor_d,ba_size_pre_hor_d,bound_data_ordered_d,ba_max_pd_pre_d,shape_d)
+            find_ba_max_pd[math.ceil(len(nz_ba_pre_hor)/32),32](nz_ba_pre_hor_d,ba_size_pre_hor_d,bound_data_ordered_d,ba_max_pd_pre_d,shape_d)
             cuda.synchronize()
             ba_max_pd_pre_h=ba_max_pd_pre_d.copy_to_host()
-            find_next_ba[len(self.ba_size_pre_hor),1](ba_max_pd_pre_d,ba_size_pre_hor_d,ba_size_cum_pre_hor_d,bound_abstract_pre_d,ba_threshold_pre,pd_d)
+            find_next_ba[math.ceil(len(self.ba_size_pre_hor)/32),32](ba_max_pd_pre_d,ba_size_pre_hor_d,ba_size_cum_pre_hor_d,bound_abstract_pre_d,ba_threshold_pre,pd_d)
             cuda.synchronize()
 
             bound_abstract_pre_h=bound_abstract_pre_d.copy_to_host()
@@ -289,7 +289,7 @@ class Abstract:
             ba_change_pre_d=cuda.to_device(ba_change_pre)
             ba_sign_pre=np.zeros([len(nz_ba_pre_hor)],dtype=np.int32)
             ba_sign_pre_d=cuda.to_device(ba_sign_pre)
-            find_change[len(nz_ba_pre_hor),1](ba_size_pre_hor_d,ba_size_cum_pre_hor_d,nz_ba_pre_hor_d,bound_data_ordered_d,shape_d,ba_change_pre_d,ba_sign_pre_d)
+            find_change[math.ceil(len(nz_ba_pre_hor)/32),32](ba_size_pre_hor_d,ba_size_cum_pre_hor_d,nz_ba_pre_hor_d,bound_data_ordered_d,shape_d,ba_change_pre_d,ba_sign_pre_d)
             cuda.synchronize()
             ba_change_pre_h=ba_change_pre_d.copy_to_host()
             ba_sign_pre_h=ba_sign_pre_d.copy_to_host()
