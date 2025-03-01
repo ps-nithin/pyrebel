@@ -106,7 +106,7 @@ while 1:
     scale_down_pixels[len(bound_data),1](bound_data_d,bound_data_orig_d,scaled_shape_d,shape_d,3)
     cuda.synchronize()
     
-    draw_lines[len(abs_draw),1](abs_draw_d,abs_size_d,bound_data_orig_d,bound_mark_d,out_image_d,0,3)
+    draw_lines[len(abs_draw),1](abs_draw_d,abs_size_d,bound_data_orig_d,bound_mark_d,out_image_d,0,2)
     cuda.synchronize()
     
     out_image_h=out_image_d.copy_to_host()
