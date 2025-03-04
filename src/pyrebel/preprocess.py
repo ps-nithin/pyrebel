@@ -166,6 +166,8 @@ def get_dist_data_init(bound_data_d,tmp_img,dist_data_d):
         x=index%tmp_img.shape[1]
         r=y
         c=x
+        max_r=y
+        max_c=x
         d_max=0.0
         color=tmp_img[r][c]
         last=-1
@@ -187,6 +189,8 @@ def get_dist_data_init(bound_data_d,tmp_img,dist_data_d):
             d_cur=sqrt(float(pow(r-y,2)+pow(c-x,2)))
             if d_cur>d_max:
                 d_max=d_cur
+                max_r=r
+                max_c=c
             if tmp_img[r-1][c]==color and last!=0:
                 r-=1
                 last=2
@@ -199,7 +203,9 @@ def get_dist_data_init(bound_data_d,tmp_img,dist_data_d):
             elif tmp_img[r][c-1]==color and last!=3:
                 c-=1
                 last=1
-        dist_data_d[ci]=d_max
+        dist_data_d[ci][0]=d_max
+        dist_data_d[ci][1]=max_r*tmp_img.shape[1]+max_c
+        
 
 @cuda.jit
 def get_max_dist(nz_s_cum_d,nz_s_d,bound_data_d,dist_data_d,max_dist_d):
@@ -207,30 +213,20 @@ def get_max_dist(nz_s_cum_d,nz_s_d,bound_data_d,dist_data_d,max_dist_d):
     if ci<len(nz_s_d):
         n=nz_s_cum_d[ci]
         s=0
-        d_max=dist_data_d[n]
+        d_max=dist_data_d[n][0]
         d_max_i=n
         while 1:
             s+=1
-            if dist_data_d[n]>d_max:
-                d_max=dist_data_d[n]
+            if dist_data_d[n][0]>d_max:
+                d_max=dist_data_d[n][0]
                 d_max_i=n
-            if s==nz_s_d[ci]:
-                break
-            n+=1
-        n=nz_s_cum_d[ci]
-        s=0
-        while 1:
-            s+=1
-            if dist_data_d[n]==d_max and n!=d_max_i:
-                d_max2=dist_data_d[n]
-                d_max_i2=n
             if s==nz_s_d[ci]:
                 break
             n+=1
 
         max_dist_d[ci][0]=bound_data_d[d_max_i]
-        max_dist_d[ci][1]=bound_data_d[d_max_i2]
-
+        max_dist_d[ci][1]=int(dist_data_d[d_max_i][1])
+        
 @cuda.jit
 def get_bound_data_order(nz_a_max_dist,nz_si_cum_d,tmp_img,init_bound_abstract,bound_data_order_d,bound_threshold_d,bound_mark_d,ba_size_d,threshold_in):
     ci=cuda.grid(1)
@@ -409,7 +405,7 @@ class Preprocess:
         get_bound_data_init[math.ceil(len(self.nz_a)/256),256](nz_a_d,nz_s_cum_d,img_boundary_d,bound_data_d)
         cuda.synchronize()
 
-        dist_data_d=cuda.device_array([nz_s_cum_[-1]],dtype=np.float64)
+        dist_data_d=cuda.device_array([nz_s_cum_[-1],2],dtype=np.float64)
         get_dist_data_init[math.ceil(nz_s_cum_[-1]/256),256](bound_data_d,img_boundary_d,dist_data_d)
         cuda.synchronize()
         
