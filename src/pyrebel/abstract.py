@@ -39,14 +39,14 @@ def find_ba_max_pd(nz_ba_d,nz_ba_size_d,bound_data_ordered_d,ba_max_pd_d,scaled_
         while 1:
             if n==nz_ba_d[ci+1]:
                 break
-            c=bound_data_ordered_d[n]
+            c=bound_data_ordered_d[n-1]
             c0=int(c/scaled_shape[1])
             c1=c%scaled_shape[1]
             pd=abs((a1-b1)*(a0-c0)-(a0-b0)*(a1-c1))/cmath.sqrt(pow(a1-b1,2)+pow(a0-b0,2)).real
 
             if pd>pd_max:
                 pd_max=pd
-                pd_max_i=n+1
+                pd_max_i=n
             n+=1
     ba_max_pd_d[ci][0]=pd_max
     ba_max_pd_d[ci][1]=pd_max_i
@@ -76,7 +76,7 @@ def find_next_ba(ba_max_pd_d,nz_ba_size_d,nz_ba_size_cum_d,bound_abstract_d,ba_t
             n+=1
     cuda.syncthreads()
     if d_max>ba_threshold:
-        bound_abstract_d[d_max_i]=d_max_i
+        bound_abstract_d[d_max_i-1]=d_max_i
         nz_ba_size_d[ci]+=1
         pd[0]=d_max
 
@@ -93,7 +93,7 @@ def find_next_ba_all(ba_max_pd_d,nz_ba_size_d,nz_ba_size_cum_d,bound_abstract_d,
             if ba_max_pd_d[n][0]>ba_threshold:
                 #d_max=ba_max_pd_d[n][0]
                 d_max_i=int(ba_max_pd_d[n][1])
-                bound_abstract_d[d_max_i]=d_max_i
+                bound_abstract_d[d_max_i-1]=d_max_i
                 ba_added+=1
             if s==nz_ba_size_d[ci]-1:
                 break
