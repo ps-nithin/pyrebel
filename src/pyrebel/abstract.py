@@ -32,7 +32,7 @@ def find_ba_max_pd(nz_ba_d,nz_ba_size_d,bound_data_ordered_d,ba_max_pd_d,scaled_
         b1=b%scaled_shape[1]
         #threshold=bound_threshold_d[nz_ba_d[ci]]
         #threshold=cmath.sqrt(float(pow(b0-a0,2)+pow(b1-a1,2))).real/8
-        n=nz_ba_d[ci]+1
+        n=nz_ba_d[ci]
         i=0
         pd_max=0.0
         pd_max_i=n
@@ -46,7 +46,7 @@ def find_ba_max_pd(nz_ba_d,nz_ba_size_d,bound_data_ordered_d,ba_max_pd_d,scaled_
 
             if pd>pd_max:
                 pd_max=pd
-                pd_max_i=n
+                pd_max_i=n+1
             n+=1
     ba_max_pd_d[ci][0]=pd_max
     ba_max_pd_d[ci][1]=pd_max_i
