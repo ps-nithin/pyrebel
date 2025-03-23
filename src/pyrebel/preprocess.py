@@ -21,14 +21,20 @@ import os
 os.environ['NUMBA_CUDA_LOW_OCCUPANCY_WARNINGS']="0"
 from pyrebel.getnonzeros import *
 
+
 @cuda.jit
 def fence_image(img_array,img_fenced_d):
+    """Sets the limits of the image."""
+    
     r,c=cuda.grid(2)
     if r>=0 and r<img_array.shape[0] and c>=0 and c<img_array.shape[1]:
         if r==0 or c==0 or r==img_array.shape[0]-1 or c==img_array.shape[1]-1:
             img_fenced_d[r][c]=500
+
 @cuda.jit
 def scale_img_cuda(img,img_scaled):
+    """Scales the input image three times. This ensures that closed boundary is obtained for lone pixels / blobs that are single pixel wide."""
+
     r,c=cuda.grid(2)
     if r<img.shape[0] and c<img.shape[1]:
         img_scaled[r*3][c*3]=img[r][c]
@@ -43,7 +49,8 @@ def scale_img_cuda(img,img_scaled):
 
 @cuda.jit
 def read_bound_cuda(img,img_boundary_d):
-    """ blob_dict={color: [[pixels],[pixels]]"""
+    """Filters pixels which belong to a boundary."""
+    
     r,c=cuda.grid(2)
     threshold=0
     if r>0 and r<img.shape[0]-1 and c>0 and c<img.shape[1]-1:
@@ -65,6 +72,8 @@ def read_bound_cuda(img,img_boundary_d):
 
 @cuda.jit
 def get_bound_cuda2(tmp_img,bound_len_low,bound_len_high,seed_map_d,bound_info):
+    """Finds the seed pixel (the top-left pixel / pixel with lowest index in a boundary / blob) for each boundary / blob in the image."""
+    
     r,c=cuda.grid(2)
     # last=0,1,2,3 for n,e,s,w respectively
     if r>0 and r<tmp_img.shape[0]-1 and r%3==0 and c>0 and c<tmp_img.shape[1]-1 and c%3==0 and tmp_img[r][c]!=500 and tmp_img[r][c-1]!=tmp_img[r][c+1] and tmp_img[r-1][c]!=tmp_img[r+1][c]:
@@ -115,6 +124,8 @@ def get_bound_cuda2(tmp_img,bound_len_low,bound_len_high,seed_map_d,bound_info):
 
 @cuda.jit
 def get_bound_data_init(nz_a,nz_s,tmp_img,bound_data_d):
+    """Finds the pixels of each boundary / blob in the image in order, starting from the seed pixel."""
+    
     ci=cuda.grid(1)
     if ci<nz_a.shape[0]:
         index=nz_a[ci]
@@ -159,6 +170,8 @@ def get_bound_data_init(nz_a,nz_s,tmp_img,bound_data_d):
 
 @cuda.jit
 def get_dist_data_init(bound_data_d,tmp_img,dist_data_d):
+    """Finds the maximum distance of each pixel in the boundary to any other pixel in the boundary."""
+    
     ci=cuda.grid(1)
     if ci<len(bound_data_d):
         index=bound_data_d[ci]
@@ -206,9 +219,10 @@ def get_dist_data_init(bound_data_d,tmp_img,dist_data_d):
         dist_data_d[ci][0]=d_max
         dist_data_d[ci][1]=max_r*tmp_img.shape[1]+max_c
         
-
 @cuda.jit
 def get_max_dist(nz_s_cum_d,nz_s_d,bound_data_d,dist_data_d,max_dist_d):
+    """Finds a pair of pixels which are farthest to each other in a boundary."""
+    
     ci=cuda.grid(1)
     if ci<len(nz_s_d):
         n=nz_s_cum_d[ci]
@@ -226,9 +240,15 @@ def get_max_dist(nz_s_cum_d,nz_s_d,bound_data_d,dist_data_d,max_dist_d):
 
         max_dist_d[ci][0]=bound_data_d[d_max_i]
         max_dist_d[ci][1]=int(dist_data_d[d_max_i][1])
-        
+   
 @cuda.jit
 def get_bound_data_order(nz_a_max_dist,nz_si_cum_d,tmp_img,init_bound_abstract,bound_data_order_d,bound_threshold_d,bound_mark_d,ba_size_d,threshold_in):
+    """
+    1. Finds the pixels of each boundary / blob in the image in order, starting from the pair of farthest pixels.
+    2. Finds the initial abstract pixels.
+    3. Maps each pixels to its boundary / blob.
+    """    
+
     ci=cuda.grid(1)
     if ci<len(nz_a_max_dist):
         index=nz_a_max_dist[ci][0]
@@ -296,13 +316,18 @@ def get_bound_data_order(nz_a_max_dist,nz_si_cum_d,tmp_img,init_bound_abstract,b
 
 @cuda.jit
 def increment_by_one(array_d):
+    """Increments each item the array by one."""
+    
     ci=cuda.grid(1)
     if ci<len(array_d):
         array_d[ci]+=1
         cuda.syncthreads()
 
+
 @cuda.jit
 def decrement_by_one(array_d):
+    """Decrements each item in the array by one."""
+    
     ci=cuda.grid(1)
     if ci<len(array_d):
         array_d[ci]-=1
@@ -428,25 +453,33 @@ class Preprocess:
         self.bound_mark_h=bound_mark_d.copy_to_host()    
         
     def set_bound_size(self,min_size=False,max_size=False):
+        """Sets the minimum and maximum threshold of boundary size."""
         if min_size:
             self.bound_len_low=min_size
         if max_size:
             self.bound_len_high=max_size
     
     def get_bound_size(self):
+        """Returns the size of each boundary."""
         return self.nz_s
+        
     def get_bound_seed(self):
+        """Returns the seed pixel of each boundary."""
         return self.nz_a
         
     def get_image_scaled(self):
+        """Returns the scaled image of the input image."""
         return self.img_scaled_h
         
     def get_bound_data(self):
+        """Returns the pixels of each boundary in the image."""
         return self.bound_data_ordered_h
     
     def get_bound_mark(self):
+        """Returns pixel-blob mapping."""
         return self.bound_mark_h
     
     def get_init_abstract(self):
+        """Returns initial abstract pixels."""
         return self.bound_abstract_h
     

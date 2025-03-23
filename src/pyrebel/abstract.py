@@ -20,6 +20,8 @@ import cmath,math
 
 @cuda.jit
 def find_ba_max_pd(nz_ba_d,nz_ba_size_d,bound_data_ordered_d,ba_max_pd_d,scaled_shape):
+    """Finds the maximum perpendicular distance for each abstract segment."""
+    
     ci=cuda.grid(1)
     if ci<len(nz_ba_d)-1:
         if nz_ba_d[ci]+1==nz_ba_d[ci+1]:
@@ -60,6 +62,8 @@ def find_ba_max_pd(nz_ba_d,nz_ba_size_d,bound_data_ordered_d,ba_max_pd_d,scaled_
 
 @cuda.jit
 def find_next_ba(ba_max_pd_d,nz_ba_size_d,nz_ba_size_cum_d,bound_abstract_d,ba_threshold,pd):
+    """Finds one abstract pixel per boundary / blob."""
+    
     ci=cuda.grid(1)
     if ci<len(nz_ba_size_d):
         n=nz_ba_size_cum_d[ci]
@@ -82,6 +86,8 @@ def find_next_ba(ba_max_pd_d,nz_ba_size_d,nz_ba_size_cum_d,bound_abstract_d,ba_t
 
 @cuda.jit
 def find_next_ba_all(ba_max_pd_d,nz_ba_size_d,nz_ba_size_cum_d,bound_abstract_d,ba_threshold):
+    """Finds one abstract pixel for each abstract segment in a boundary / blob."""
+    
     ci=cuda.grid(1)
     if ci<len(nz_ba_size_d):
         n=nz_ba_size_cum_d[ci]
@@ -107,6 +113,8 @@ def find_next_ba_all(ba_max_pd_d,nz_ba_size_d,nz_ba_size_cum_d,bound_abstract_d,
 
 @cuda.jit
 def find_change(nz_ba_size_d,nz_ba_size_cum_d,nz_ba_d,bound_data_ordered_d,scaled_shape,ba_change_d,ba_sign_d):
+    """Finds signatures for the current layer of abstraction."""
+    
     ci=cuda.grid(1)
     if ci<len(nz_ba_size_d):
         n=nz_ba_size_cum_d[ci]
@@ -156,6 +164,8 @@ def find_change(nz_ba_size_d,nz_ba_size_cum_d,nz_ba_d,bound_data_ordered_d,scale
 
 @cuda.jit(device=True)
 def angle_diff(a,b):
+    """Finds the change in direction between angles 'a' and 'b'."""
+    
     diff=b-a
     if diff>180:
         diff=diff-360
@@ -186,6 +196,8 @@ class Abstract:
         self.ba_sign_pre_h=[]
         
     def do_abstract_all(self,ba_threshold_pre):
+        """Finds all layers of abstraction."""
+        
         bound_data_ordered_d=cuda.to_device(self.bound_data_ordered_h)
         bound_abstract_pre_d=cuda.to_device(self.bound_abstract_h)
         shape_d=cuda.to_device(self.shape_h)
@@ -243,6 +255,8 @@ class Abstract:
         self.bound_abstract_h=bound_abstract_pre_h
         
     def do_abstract_one(self,ba_threshold_pre):
+        """Finds one layer of abstraction."""
+        
         is_final=False
         bound_data_ordered_d=cuda.to_device(self.bound_data_ordered_h)
         bound_abstract_pre_d=cuda.to_device(self.bound_abstract_h)
@@ -304,9 +318,11 @@ class Abstract:
         return is_final
         
     def get_sign(self):
+        """Returns signatures for the current layer of abstraction."""
         return self.ba_sign_pre_h
     
     def reset_abstract(self):
+        """Resets abstraction."""
         if self.is_closed:
             self.ba_size_pre_hor=np.full(self.n_bounds,3,dtype=np.int32)
             self.pre_count=3
@@ -318,11 +334,17 @@ class Abstract:
         self.ba_sign_pre_h=[]
         
     def get_abstract(self):
+        """Returns the current layer of abstraction."""
         return self.nz_ba_pre_hor
     
     def get_pd_change(self):
+        """Returns change in perpendicular distance for the current layer of abstraction."""
         return self.pd_change
+        
     def get_pd(self):
+        """Returns perpendicular distance for the current layer of abstraction."""
         return self.pd
+        
     def get_abstract_size(self):
+        """Returns the number of abstract pixels for each boundary."""
         return self.ba_size_pre_hor

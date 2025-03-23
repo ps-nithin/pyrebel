@@ -16,14 +16,16 @@
 from numba import cuda
 from math import sqrt
 
-def draw_pixels_cuda(pixels,i,img):
-    # Draws 'pixels' to 'img' with color 'i'
+def draw_pixels_cuda(pixels,i,img):        
+    """Draws 'pixels' in 'img' with 'i'"""
+    
     draw_pixels_cuda_[pixels.shape[0],1](pixels,i,img)
     cuda.synchronize()
 
 @cuda.jit
 def draw_pixels_cuda_(pixels,i,img):
-    # CUDA version of function 'draw_pixels_cuda()'
+    """Draws 'pixels' in 'img' with 'i'"""
+    
     cc=cuda.grid(1)
     if cc<pixels.shape[0]:
         r=int(pixels[cc]/img.shape[1])
@@ -32,7 +34,8 @@ def draw_pixels_cuda_(pixels,i,img):
 
 @cuda.jit
 def increment_by_one(array_d):
-    # Increments each item in device array 'array_d' by one. cuda version.
+    """Increments each item in array 'array_d' by one."""
+    
     ci=cuda.grid(1)
     if ci<len(array_d):
         array_d[ci]+=1
@@ -40,27 +43,31 @@ def increment_by_one(array_d):
 
 @cuda.jit
 def decrement_by_one(array_d):
-    # Decrements each item in device array 'array_d' by one. cuda version
+    """Decrements each item in array 'array_d' by one."""
+    
     ci=cuda.grid(1)
     if ci<len(array_d):
         array_d[ci]-=1
         cuda.syncthreads()
         
 def decrement_by_one_cuda(array):
-    # Decrements each item in 'array' by one.
+    """Decrements each item in 'array' by one."""
+    
     array_d=cuda.to_device(array)
     decrement_by_one[len(array),1](array_d)
     cuda.synchronize()
     return array_d.copy_to_host()    
 
 def draw_pixels_from_indices_cuda(indices,pixels,i,img):
-    # Draws pixels from 'pixels' with indices 'indices' to image 'img' with color 'i'
+    """Draws 'indices' in 'pixels' in 'img' with 'i'."""
+    
     draw_pixels_from_indices_cuda_[indices.shape[0],1](indices,pixels,i,img)
     cuda.synchronize()
 
 @cuda.jit
 def draw_pixels_from_indices_cuda_(indices,pixels,i,img):
-    # CUDA version of function 'draw_pixels_from_indices_cuda()'
+    """Draws 'indices' in 'pixels' in 'img' with 'i'."""
+    
     cc=cuda.grid(1)
     if cc<len(indices):
         r=int(pixels[indices[cc]]/img.shape[1])
@@ -69,13 +76,16 @@ def draw_pixels_from_indices_cuda_(indices,pixels,i,img):
         
 @cuda.jit
 def image_to_wave(img_array_d,img_wave_pre_init_d):
-    # Plot each row of 'img_array_d' in 2D space with color of pixels as y-coordinate.
+    """Plot each row of 'img_array_d' in 2D space with color of pixels as y-coordinate."""
+    
     r,c=cuda.grid(2)
     if r<img_array_d.shape[0] and c<img_array_d.shape[1]:
         img_wave_pre_init_d[r*img_array_d.shape[1]+c]=img_array_d[r][c]*img_array_d.shape[1]+c
 
 @cuda.jit
 def init_abstract(img_array_d,bound_abstract_pre_d):
+    """Finds initial abstract points for each row in the input image. Each row is considered as separate boundary / blob."""
+    
     ci=cuda.grid(1)
     if ci==0:
         bound_abstract_pre_d[ci]=ci+1
@@ -98,6 +108,8 @@ def init_abstract_from_size(size_d,size_cum_d,init_abstract_d):
 
 @cuda.jit
 def image_rotate45(img_array_d,img_rot45_d,img_rot45_mask_d):
+    """Rotates an image by 45 degrees."""
+    
     r,c=cuda.grid(2)
     if r<img_array_d.shape[0] and c<img_array_d.shape[1]:
         if r+c<img_array_d.shape[0]:
@@ -109,6 +121,8 @@ def image_rotate45(img_array_d,img_rot45_d,img_rot45_mask_d):
 
 @cuda.jit
 def image_rev_rotate45(img_rot45_d,img_rot45_mask_d,img_array_d):
+    """Recovers the original image from image rotated by 45 degrees."""
+    
     r,c=cuda.grid(2)
     if r<img_rot45_d.shape[0] and c<img_rot45_d.shape[1] and img_rot45_mask_d[r][c]!=-500:
         if r<img_array_d.shape[0]:
@@ -123,13 +137,15 @@ def fill_column_zero(img_array_d):
         img_array_d[r][c]=img_array_d[r][0]
 
 def draw_pixels_cuda2(pixels,exclusions,invert,i,img):
-    # Draws 'pixels' to image 'img' with 'exclusions' with color 'i'
+    """Draws 'pixels' in image 'img' with 'exclusions' with color 'i'"""
+    
     draw_pixels_cuda2_[pixels.shape[0],1](pixels,exclusions,invert,i,img)
     cuda.synchronize()
 
 @cuda.jit
 def draw_pixels_cuda2_(pixels,exclusions,invert,i,img):
-    # CUDA version of function 'draw_pixels_cuda2()'
+    """Draws 'pixels' in image 'img' with 'exclusions' with color 'i'"""
+    
     cc=cuda.grid(1)
     if cc<pixels.shape[0]:
         if invert:
@@ -145,7 +161,8 @@ def draw_pixels_cuda2_(pixels,exclusions,invert,i,img):
  
 @cuda.jit
 def clone_image(img_array,img_clone,color):
-    # draws pixels in 'img_array' with color 'color' to 'img_clone'
+    """Draws pixels in 'img_array' with color 'color' to 'img_clone'"""
+    
     r,c=cuda.grid(2)
     if r<img_array.shape[0] and c<img_array.shape[1]:
         if img_array[r][c]==color:
@@ -153,8 +170,8 @@ def clone_image(img_array,img_clone,color):
 
 @cuda.jit
 def clone_image2(img_array_orig,image_to_clone,img_cloned,inv):
-    # draws pixels in 'image_to_clone' with color '255' to 'img_cloned' with the color 
-    # of corresponding pixels in 'img_array_orig'
+    """Draws pixels in 'image_to_clone' with color '255' to 'img_cloned' with the color of corresponding pixels in 'img_array_orig'"""
+    
     r,c=cuda.grid(2)
     if r>0 and r<img_array_orig.shape[0] and c>0 and c<img_array_orig.shape[1]:
         if image_to_clone[r][c]==255:
@@ -202,14 +219,8 @@ def draw_lines_neighbors_all(img_array_d,neighbor_img_d,color,threshold):
 
 @cuda.jit
 def winding_number_kernel(polygon,bound_data_ordered_d,img_array_d,winding_out_img_d):
-    """
-    GPU kernel to compute the winding number for each point.
-
-    Parameters:
-    points: Array of points to check (n_points x 2).
-    polygon: Vertices of the polygon (n_vertices x 2).
-    results: Output array for each point (n_points).
-    """
+    """Flood fill 'polygon'"""
+    
     py,px = cuda.grid(2)
     if py<winding_out_img_d.shape[0] and px<winding_out_img_d.shape[1]:
         winding_number = 0
@@ -238,6 +249,8 @@ def winding_number_kernel(polygon,bound_data_ordered_d,img_array_d,winding_out_i
 
 @cuda.jit
 def draw_lines(nz_ba_d,nz_ba_size_d,bound_data_ordered_d,bound_mark_d,out_image_d,color,min_size):
+    """Draw lines between abstract pixels."""
+    
     ci=cuda.grid(1)
     if ci<len(nz_ba_d)-1:
         if (nz_ba_d[ci]+1)==nz_ba_d[ci+1] or nz_ba_size_d[bound_mark_d[nz_ba_d[ci]]]<min_size+1:
@@ -282,6 +295,8 @@ def quantize_img(img_array_d,img_quantized_d,quant_size):
 
 @cuda.jit
 def scale_down_pixels(orig_pixels_d,pixels_d,orig_shape_d,shape_d,scale_d):
+    """Scale down the pixels 'orig_pixels' by 'scale_d'."""
+    
     ci=cuda.grid(1)
     if ci<len(pixels_d):
         r_orig=int(orig_pixels_d[ci]/orig_shape_d[1])
