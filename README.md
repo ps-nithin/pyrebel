@@ -46,8 +46,16 @@ For example,<br>
 ```python3 pyrebel_main_vision.py --input images/lotus.jpg```<br><br>
 Below is a sample input image,<br><br>
 <img src="https://github.com/ps-nithin/pyrebel/raw/0ffc49de07c814862d26468ccf95e34a3afba50b/images/small_lotus.jpg"></img><br>Below is the output image,<br><br><img src="https://github.com/ps-nithin/pyrebel/raw/25212f87e81954a884a80386bea1bb46e931cfe6/images/output_lotus.png"></img>
+## 4. Abstract painting 
+This is a demo of abstract painting using data abstraction.<br>
+Usage:<br>
+```python3 pyrebel_main_paint.py --input <filename>```<br><br>
+For example,<br>
+Running ```python3 pyrebel_main_paint.py --input images/elephant.jpg```<br><br>
+Below is the sample input image,<br><br>
+<img src="https://github.com/ps-nithin/pyrebel/raw/4ad41676cdc3dde417e0bcc1cedad2b597f57fba/images/small_elephant.jpg"</img><br>Below is the output image,<br><br><img src="https://github.com/ps-nithin/pyrebel/raw/4ad41676cdc3dde417e0bcc1cedad2b597f57fba/images/output_elephant.png"></img>
 
-## 4. Pattern recognition demo
+## 5. Pattern recognition demo
 This is a demo of pattern recognition achieved using data abstraction.<br>
 1. Learning<br>
    Usage: ```python3 pyrebel_main_learn.py --learn /path/to/image/directory/```<br>
