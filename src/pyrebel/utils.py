@@ -304,4 +304,34 @@ def scale_down_pixels(orig_pixels_d,pixels_d,orig_shape_d,shape_d,scale_d):
         r=int(r_orig/scale_d)
         c=int(c_orig/scale_d)
         pixels_d[ci]=r*shape_d[1]+c
-   
+
+@cuda.jit
+def draw_blocks(orig_img_array_d,img_array_d,block_img_d,width):
+    """Paints the output of edge detection. Squares of width 'width' with a single color are painted with
+    the average of the area in the original image."""
+    
+    r,c=cuda.grid(2)
+    count=0
+    if r<img_array_d.shape[0]-width and c<img_array_d.shape[1]-width:
+        area=0
+        sum_r=0
+        sum_g=0
+        sum_b=0
+        orig_color=img_array_d[r][c]
+        for rr in range(r,r+width):
+            for cc in range(c,c+width):
+                area+=1
+                if img_array_d[rr][cc]==orig_color:
+                    count+=1
+        if count==area:
+            for rr in range(r,r+width):
+                for cc in range(c,c+width):
+                    sum_r+=orig_img_array_d[rr][cc][0]
+                    sum_g+=orig_img_array_d[rr][cc][1]
+                    sum_b+=orig_img_array_d[rr][cc][2]
+            for rr in range(r,r+width):
+                for cc in range(c,c+width):
+                    block_img_d[rr][cc][0]=int(sum_r/(width**2))
+                    block_img_d[rr][cc][1]=int(sum_g/(width**2))
+                    block_img_d[rr][cc][2]=int(sum_b/(width**2))
+                    
