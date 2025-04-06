@@ -50,6 +50,8 @@ Below is a sample input image,<br><br>
 This is a demo of abstract painting using data abstraction. The output of edge detection is painted to obtain the desired output.<br>
 Usage:<br>
 ```python3 pyrebel_main_paint.py --input <filename>```<br><br>
+Optional arguments for tweaking the result,<br>
+   1. ```--edge_threshold <value>``` Selects the threshold of abstraction. (Defaults to 30). Higher the value more abstract the output becomes.
 For example,<br>
 Running ```python3 pyrebel_main_paint.py --input images/elephant.jpg```<br><br>
 Below is the sample input image,<br><br>

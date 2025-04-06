@@ -33,7 +33,7 @@ args=parser.parse_args()
 if args.edge_threshold:
     edge_threshold=int(args.edge_threshold)
 else:
-    edge_threshold=10
+    edge_threshold=30
     
 while 1:
     start_time=time.time()    
@@ -53,7 +53,7 @@ while 1:
     blockspergrid_x=math.ceil(img_array.shape[0]/threadsperblock[0])
     blockspergrid_y=math.ceil(img_array.shape[1]/threadsperblock[1])
     blockspergrid=(blockspergrid_x,blockspergrid_y)
-    n=20
+    n=50
     for i in range(1,n+1):
         draw_blocks[blockspergrid,threadsperblock](img_array_rgb_d,edges_img_d,block_img_d,i)
         cuda.synchronize()    
