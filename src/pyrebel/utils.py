@@ -312,7 +312,7 @@ def draw_blocks(orig_img_array_d,img_array_d,block_img_d,width):
     
     r,c=cuda.grid(2)
     count=0
-    if r<img_array_d.shape[0]-width and c<img_array_d.shape[1]-width:
+    if r<img_array_d.shape[0]-width+1 and c<img_array_d.shape[1]-width+1:
         area=0
         sum_r=0
         sum_g=0
