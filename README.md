@@ -55,7 +55,7 @@ Optional arguments for tweaking the result,<br>
 For example,<br>
 Running ```python3 pyrebel_main_paint.py --input images/elephant.jpg```<br><br>
 Below is the sample input image,<br><br>
-<img src="https://github.com/ps-nithin/pyrebel/raw/4ad41676cdc3dde417e0bcc1cedad2b597f57fba/images/small_elephant.jpg"></img><br>Below is the output image,<br><br><img src="https://github.com/ps-nithin/pyrebel/raw/4ad41676cdc3dde417e0bcc1cedad2b597f57fba/images/output_elephant.png"></img>
+<img src="https://github.com/ps-nithin/pyrebel/raw/4ad41676cdc3dde417e0bcc1cedad2b597f57fba/images/small_elephant.jpg"></img><br>Below is the output image,<br><br><img src="https://github.com/ps-nithin/pyrebel/raw/0b2e226a716097ad0839bfdd0d097dcad3b09633/images/output_elephant2.png"></img>
 
 ## 5. Pattern recognition demo
 This is a demo of pattern recognition achieved using data abstraction.<br>
