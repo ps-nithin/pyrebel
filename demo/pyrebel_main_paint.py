@@ -28,13 +28,23 @@ from pyrebel.utils import *
 parser=argparse.ArgumentParser()
 parser.add_argument("-i","--input",help="Input file name.")
 parser.add_argument("-et","--edge_threshold",help="Threshold of edge detection.")
+parser.add_argument("-b","--block_threshold",help="Block threshold.")
+parser.add_argument("-p","--paint_threshold",help="Paint threshold.")
 args=parser.parse_args()
 
 if args.edge_threshold:
     edge_threshold=int(args.edge_threshold)
 else:
-    edge_threshold=30
-    
+    edge_threshold=10
+if args.block_threshold:
+    block_threshold=int(args.block_threshold)
+else:
+    block_threshold=20
+if args.paint_threshold:
+    paint_threshold=int(args.paint_threshold)
+else:
+    paint_threshold=5
+      
 while 1:
     start_time=time.time()    
     if args.input:
@@ -53,11 +63,21 @@ while 1:
     blockspergrid_x=math.ceil(img_array.shape[0]/threadsperblock[0])
     blockspergrid_y=math.ceil(img_array.shape[1]/threadsperblock[1])
     blockspergrid=(blockspergrid_x,blockspergrid_y)
-    n=50
-    for i in range(1,n+1):
-        draw_blocks[blockspergrid,threadsperblock](img_array_rgb_d,edges_img_d,block_img_d,i)
-        cuda.synchronize()    
-
+    
+    k=0
+    while 1:
+        n=1
+        while 1:
+            draw_blocks[blockspergrid,threadsperblock](img_array_rgb_d,edges_img_d,block_img_d,n)
+            cuda.synchronize()
+            if n==block_threshold:
+                break
+            n+=1
+        k+=1
+        print(k,"/",paint_threshold)
+        if k==paint_threshold:
+            break
+        img_array_rgb_d=block_img_d
     block_img_h=block_img_d.copy_to_host()
     
     # Save the output to disk.
