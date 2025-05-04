@@ -55,7 +55,7 @@ Optional arguments for tweaking the result,<br>
    2. ```--paint_threshold <value>``` Selects the threshold of painting. (Defaults to 5).
    3. ```--block_threshold <value>``` Selects the threshold of block size. (Defaults to 20).<br><br>
 For example,<br>
-Running ```python3 pyrebel_main_paint.py --input images/elephant.jpg --edge_threshold 10 --paint_threshold 1```<br><br>
+Running ```python3 pyrebel_main_paint.py --input images/elephant.jpg --edge_threshold 10 --block_threshold 50 --paint_threshold 1```<br><br>
 Below is the sample input image,<br><br>
 <img src="https://github.com/ps-nithin/pyrebel/raw/4ad41676cdc3dde417e0bcc1cedad2b597f57fba/images/small_elephant.jpg"></img><br>Below is the output image,<br><br><img src="https://github.com/ps-nithin/pyrebel/raw/0b2e226a716097ad0839bfdd0d097dcad3b09633/images/output_elephant2.png"></img>
 
