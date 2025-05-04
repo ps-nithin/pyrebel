@@ -51,9 +51,11 @@ This is a demo of abstract painting using data abstraction. The output of edge d
 Usage:<br>
 ```python3 pyrebel_main_paint.py --input <filename>```<br><br>
 Optional arguments for tweaking the result,<br>
-   1. ```--edge_threshold <value>``` Selects the threshold of abstraction. (Defaults to 30). Higher the value more abstract the output becomes.
+   1. ```--edge_threshold <value>``` Selects the threshold of edge detection. (Defaults to 10).
+   2. ```--paint_threshold <value>``` Selects the threshold of painting. (Defaults to 5).
+   3. ```--block_threshold <value>``` Selects the threshold of block size. (Defaults to 20).
 For example,<br>
-Running ```python3 pyrebel_main_paint.py --input images/elephant.jpg```<br><br>
+Running ```python3 pyrebel_main_paint.py --input images/elephant.jpg --paint_threshold 1 --edge_threshold 10  --block_threshold 50```<br><br>
 Below is the sample input image,<br><br>
 <img src="https://github.com/ps-nithin/pyrebel/raw/4ad41676cdc3dde417e0bcc1cedad2b597f57fba/images/small_elephant.jpg"></img><br>Below is the output image,<br><br><img src="https://github.com/ps-nithin/pyrebel/raw/0b2e226a716097ad0839bfdd0d097dcad3b09633/images/output_elephant2.png"></img>
 
