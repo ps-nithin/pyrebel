@@ -53,7 +53,7 @@ Usage:<br>
 Optional arguments for tweaking the result,<br>
    1. ```--edge_threshold <value>``` Selects the threshold of edge detection. (Defaults to 10).
    2. ```--paint_threshold <value>``` Selects the threshold of painting. (Defaults to 5).
-   3. ```--block_threshold <value>``` Selects the threshold of block size. (Defaults to 20).<br>
+   3. ```--block_threshold <value>``` Selects the threshold of block size. (Defaults to 20).<br><br>
 For example,<br>
 Running ```python3 pyrebel_main_paint.py --input images/elephant.jpg --edge_threshold 10 --paint_threshold 1```<br><br>
 Below is the sample input image,<br><br>
