@@ -79,8 +79,31 @@ while 1:
     # Get 1D array containing size of boundaries of blobs in the array.
     bound_size=pre.get_bound_size()
     print("len(bound_data)=",len(bound_data))
-
-    scaled_shape=[img_array.shape[0]*3,img_array.shape[1]*3]
+    scaled_shape=pre.get_image_scaled().shape
+    
+    # Select largest blob
+    blob_index=np.argsort(bound_size[2:])[-1]+2
+    print("blob_index=",blob_index)
+    
+    bound_size_d=cuda.to_device(bound_size)
+    increment_by_one[len(bound_size),1](bound_size_d)
+    cuda.synchronize()
+    bound_size_i=bound_size_d.copy_to_host()
+    bound_size_i_cum_=np.cumsum(bound_size_i)
+    bound_size_i_cum=np.delete(np.insert(bound_size_i_cum_,0,0),-1)
+    
+    blob_index_data=bound_data[bound_size_i_cum[blob_index]:bound_size_i_cum[blob_index]+bound_size_i[blob_index]]
+    blob_index_data_d=cuda.to_device(blob_index_data)
+    
+    out_image=np.zeros(scaled_shape,dtype=np.int32)
+    out_image_d=cuda.to_device(out_image)
+    draw_pixels_cuda(blob_index_data_d,200,out_image_d)
+    out_image_h=out_image_d.copy_to_host()
+    
+    # Save the current blob to disk.
+    Image.fromarray(out_image_h).convert('RGB').save("output.png")
+    
+    
     
     # Initialize the abstraction class
     abs=Abstract(bound_data,len(bound_size),init_bound_abstract,scaled_shape,True)
@@ -102,8 +125,7 @@ while 1:
             break
             
     print("found signatures in",time.time()-fst)
-
-    blob_index=2
+    
     top_n=3
     if args.recognize:
         rt=time.time()
