@@ -50,15 +50,15 @@ def find_ba_max_pd(nz_ba_d,nz_ba_size_d,bound_data_ordered_d,ba_max_pd_d,scaled_
                 pd_max=pd
                 pd_max_i=n
             n+=1
-    ba_max_pd_d[ci][0]=pd_max
-    ba_max_pd_d[ci][1]=pd_max_i
-    """
-    if pd_max>threshold:
-        bound_abstract_d[pd_max_i]=pd_max_i
-        seed_=bound_mark_d[nz_ba_d[ci]-1]
-        #ba_size_d[seed_]+=1
-        cuda.atomic.add(ba_size_d,seed_,1)
-    """
+        ba_max_pd_d[ci][0]=pd_max
+        ba_max_pd_d[ci][1]=pd_max_i
+        """
+        if pd_max>threshold:
+            bound_abstract_d[pd_max_i]=pd_max_i
+            seed_=bound_mark_d[nz_ba_d[ci]-1]
+            #ba_size_d[seed_]+=1
+            cuda.atomic.add(ba_size_d,seed_,1)
+        """
 
 @cuda.jit
 def find_next_ba(ba_max_pd_d,nz_ba_size_d,nz_ba_size_cum_d,bound_abstract_d,ba_threshold,pd):
@@ -78,11 +78,11 @@ def find_next_ba(ba_max_pd_d,nz_ba_size_d,nz_ba_size_cum_d,bound_abstract_d,ba_t
                 break
             s+=1
             n+=1
-    cuda.syncthreads()
-    if d_max>ba_threshold:
-        bound_abstract_d[d_max_i-1]=d_max_i
-        nz_ba_size_d[ci]+=1
-        pd[0]=d_max
+        cuda.syncthreads()
+        if d_max>ba_threshold:
+            bound_abstract_d[d_max_i-1]=d_max_i
+            nz_ba_size_d[ci]+=1
+            pd[0]=d_max
 
 @cuda.jit
 def find_next_ba_all(ba_max_pd_d,nz_ba_size_d,nz_ba_size_cum_d,bound_abstract_d,ba_threshold):
@@ -105,11 +105,11 @@ def find_next_ba_all(ba_max_pd_d,nz_ba_size_d,nz_ba_size_cum_d,bound_abstract_d,
                 break
             s+=1
             n+=1
-    cuda.syncthreads()
-    cuda.atomic.add(nz_ba_size_d,ci,ba_added)
-    #if d_max>ba_threshold:
-    #    bound_abstract_d[d_max_i]=d_max_i
-    #    nz_ba_size_d[ci]+=1
+        cuda.syncthreads()
+        cuda.atomic.add(nz_ba_size_d,ci,ba_added)
+        #if d_max>ba_threshold:
+        #    bound_abstract_d[d_max_i]=d_max_i
+        #    nz_ba_size_d[ci]+=1
 
 @cuda.jit
 def find_change(nz_ba_size_d,nz_ba_size_cum_d,nz_ba_d,bound_data_ordered_d,scaled_shape,ba_change_d,ba_sign_d):
