@@ -110,18 +110,18 @@ while 1:
     
     n_layers=30
     # Initialize learning class
-    l=Learn(n_layers,len(bound_size),4)
+    l=Learn(n_layers,len(bound_size),3)
  
     print("len(know_base)=",len(l.get_know_base()))
     fst=time.time()
     while 1:
         # Do one layer of abstraction
-        abs.do_abstract_one(abs_threshold)
+        is_finished_abs=abs.do_abstract_one(abs_threshold)
         ba_sign=abs.get_sign()
         ba_size=abs.get_abstract_size()
         # Find signatures for the layer    
         is_finished=l.find_signatures2(ba_sign,ba_size)    
-        if is_finished:
+        if is_finished or is_finished_abs:
             break
             
     print("found signatures in",time.time()-fst)
@@ -129,12 +129,12 @@ while 1:
     top_n=3
     if args.recognize:
         rt=time.time()
-        print("symbols found=",l.recognize2(blob_index,top_n))
+        print("symbols found=",l.recognize_one(blob_index,top_n))
         print("recognize time=",time.time()-rt)
         time.sleep(3)
     if args.learn:
         lt=time.time()
-        print("learning",sign_name,l.learn2(blob_index,sign_name))
+        print("learning",sign_name,l.learn_one(blob_index,sign_name))
         print("learn time=",time.time()-lt)
         l.write_know_base()  
     

@@ -169,7 +169,29 @@ class Learn:
         find_signatures_cuda[len(nz_ba_size_h),1](ba_sign_d,nz_ba_size_d,nz_ba_size_cum_d,ba_sign_array_d)
         cuda.synchronize()
         self.ba_sign_array_h=ba_sign_array_d.copy_to_host()           
-    
+ 
+    def learn_one(self,blob_i,sign_name):
+        n=0
+        learned_signs=list()
+        ba_sign_array2_blob_h=self.ba_sign_array2_h[blob_i].astype(str)
+        join=lambda x: np.asarray(''.join(x).split('2')[0],dtype=object)
+        ba_sign_array2_blob_h=np.apply_along_axis(join,1,ba_sign_array2_blob_h)
+        ba_sign_array2_blob_h=np.unique(ba_sign_array2_blob_h)
+        for cur_sign in ba_sign_array2_blob_h:
+            if cur_sign in self.know_base:
+                if sign_name in self.know_base[cur_sign]:
+                    self.know_base[cur_sign][sign_name]+=1
+                else:
+                    self.know_base[cur_sign][sign_name]=1
+                    learned_signs.append(cur_sign)
+                    n+=1 
+            else:
+                self.know_base[cur_sign]={sign_name:1}
+                #print(cur_sign)
+                learned_signs.append(cur_sign) 
+                n+=1
+        return learned_signs
+           
     def learn2(self,blob_i,sign_name):
         n=0
         #sign_sum=self.ba_sign_array_h.sum(axis=2)
@@ -222,6 +244,21 @@ class Learn:
         return self.ba_sign_array_h
     def get_sign_array2(self):
         return self.ba_sign_array2_h
+
+    def recognize_one(self,blob_i,top_n):
+        recognized=list()
+        if len(self.ba_sign_array_h)>blob_i:
+            ba_sign_array2_blob_h=self.ba_sign_array2_h[blob_i].astype(str)
+            join=lambda x: np.asarray(''.join(x).split('2')[0],dtype=object)
+            ba_sign_array2_blob_h=np.apply_along_axis(join,1,ba_sign_array2_blob_h)
+            ba_sign_array2_blob_h=np.unique(ba_sign_array2_blob_h)
+            for cur_sign in ba_sign_array2_blob_h:
+                if cur_sign in self.know_base:
+                    symbol_recognized=self.know_base[cur_sign].keys()
+                    recognized+=symbol_recognized
+            blob_i_counter=Counter(recognized)
+            return dict(blob_i_counter.most_common(top_n))
+        return {}        
         
     def recognize2(self,blob_i,top_n):
         recognized=list()
