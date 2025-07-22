@@ -15,6 +15,7 @@
 
 from numba import cuda
 from math import sqrt
+import numpy as np
 
 def draw_pixels_cuda(pixels,i,img):        
     """Draws 'pixels' in 'img' with 'i'"""
@@ -335,3 +336,63 @@ def draw_blocks(orig_img_array_d,img_array_d,block_img_d,width):
                     block_img_d[rr][cc][1]=int(sum_g/(width**2))
                     block_img_d[rr][cc][2]=int(sum_b/(width**2))
                     
+def run_cuda_duplicate_detection_large(arr):
+    """Marks duplicates in 3D array along axis-2"""
+    
+    assert arr.ndim == 3, "Input must be a 3D array"
+    a, b, c = arr.shape  # shape: (batches, rows, cols)
+
+    # Allocate device memory
+    arr_device = cuda.to_device(arr)
+    dup_mask=np.zeros((a,b),dtype=np.bool_)
+    dup_mask_device=cuda.to_device(dup_mask)
+    #dup_mask_device = cuda.device_array((a, b), dtype=np.bool_)
+
+    # Define thread block and grid sizes
+    threads_per_block = (16, 16)
+    blocks_per_grid_x = (a + threads_per_block[0] - 1) // threads_per_block[0]
+    blocks_per_grid_y = (b + threads_per_block[1] - 1) // threads_per_block[1]
+    blocks_per_grid = (blocks_per_grid_x, blocks_per_grid_y)
+
+    # Launch kernel
+    mark_duplicates_cuda_large[blocks_per_grid, threads_per_block](arr_device, dup_mask_device)
+    cuda.synchronize()
+    # Copy result back
+    return dup_mask_device.copy_to_host()
+                    
+@cuda.jit
+def mark_duplicates_cuda_large(arr, dup_mask):
+    """CUDA Kernel to mark duplicates in 3D array along axis-1"""
+    
+    batch_idx = cuda.blockIdx.x * cuda.blockDim.x + cuda.threadIdx.x
+    row_idx = cuda.blockIdx.y * cuda.blockDim.y + cuda.threadIdx.y
+
+    num_batches = arr.shape[0]
+    num_rows = arr.shape[1]
+    num_cols = arr.shape[2]
+
+    if batch_idx >= num_batches or row_idx >= num_rows:
+        return
+
+    # Compare this row against all previous rows in the same batch
+    for other_row in range(row_idx):
+        is_duplicate = True
+        for col in range(num_cols):
+            if arr[batch_idx, row_idx, col] != arr[batch_idx, other_row, col]:
+                is_duplicate = False
+                break
+        if is_duplicate:
+            dup_mask[batch_idx, row_idx] = True
+            return  # Found duplicate, exit early
+
+@cuda.jit
+def fill_axis1(array_d,mask_d,val):
+    """CUDA Kernel to fill 3D array with 2D mask array with a scalar along axis-2"""
+    
+    r,c=cuda.grid(2)
+    if r<array_d.shape[0] and c<array_d.shape[1]:
+        if mask_d[r][c]:
+            for index in range(array_d.shape[2]):
+                array_d[r][c][index]=val
+
+                

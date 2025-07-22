@@ -16,7 +16,9 @@
 import numpy as np
 from numba import cuda,int32
 from collections import Counter
-import pickle,os
+import pickle,os,math
+from pyrebel.utils import *
+from pyrebel.getnonzeros import *
 
 @cuda.jit
 def find_signatures_cuda(ba_sign_d,nz_ba_size_d,nz_ba_size_cum_d,ba_sign_array_d):
@@ -141,7 +143,7 @@ class Learn:
                 self.know_base=pickle.load(fpr)
             except EOFError:
                 self.know_base={}
-        self.ba_sign_array2_h=np.full([n_blobs,int(((layer_n*(layer_n+1)/2)-3)*4),layer_n],2,dtype=np.int32)
+        self.ba_sign_array2_h=np.full([n_blobs,int(((layer_n*(layer_n+1)/2)-3)*4),layer_n],2,dtype=np.int8)
         self.ba_sign_array_h=np.zeros([n_blobs,int(((layer_n*(layer_n+1)/2)-3)*4),layer_n+2],dtype=np.int64)
         
     def find_signatures2(self,ba_sign_h,nz_ba_size_h):
@@ -173,7 +175,25 @@ class Learn:
     def learn_one(self,blob_i,sign_name):
         n=0
         learned_signs=list()
-        ba_sign_array2_blob_h=self.ba_sign_array2_h[blob_i].astype(str)
+        #print(self.ba_sign_array2_h[blob_i].shape)
+        ba_sign_array2_blob_h=self.ba_sign_array2_h[blob_i].reshape((1,)+self.ba_sign_array2_h[blob_i].shape)
+        ba_sign_array2_blob_d=cuda.to_device(ba_sign_array2_blob_h)
+        mask=run_cuda_duplicate_detection_large(ba_sign_array2_blob_h)
+        
+        mask_d=cuda.to_device(mask)
+        threads_per_block_2d=(32,32)
+        blocks_per_grid_x=math.ceil(ba_sign_array2_blob_h.shape[0]/threads_per_block_2d[0])
+        blocks_per_grid_y=math.ceil(ba_sign_array2_blob_h.shape[1]/threads_per_block_2d[1])
+        fill_axis1[(blocks_per_grid_x,blocks_per_grid_y),threads_per_block_2d](ba_sign_array2_blob_d,mask_d,3)
+        cuda.synchronize()
+        
+        ba_sign_array2_blob_h=ba_sign_array2_blob_d.copy_to_host()
+        ba_sign_array2_blob_flat=ba_sign_array2_blob_h.flatten()
+        nz_ba_sign_array2_blob_flat=get_non_zeros(ba_sign_array2_blob_flat.astype('int32'),3)
+        ba_sign_array2_blob_h=nz_ba_sign_array2_blob_flat.reshape([int(len(nz_ba_sign_array2_blob_flat)/self.layer_n),self.layer_n])
+        #print(ba_sign_array2_blob_h.shape)
+        
+        ba_sign_array2_blob_h=ba_sign_array2_blob_h.astype(str)
         join=lambda x: np.asarray(''.join(x).split('2')[0],dtype=object)
         ba_sign_array2_blob_h=np.apply_along_axis(join,1,ba_sign_array2_blob_h)
         ba_sign_array2_blob_h=np.unique(ba_sign_array2_blob_h)
@@ -248,7 +268,25 @@ class Learn:
     def recognize_one(self,blob_i,top_n):
         recognized=list()
         if len(self.ba_sign_array_h)>blob_i:
-            ba_sign_array2_blob_h=self.ba_sign_array2_h[blob_i].astype(str)
+            #print(self.ba_sign_array2_h[blob_i].shape)
+            ba_sign_array2_blob_h=self.ba_sign_array2_h[blob_i].reshape((1,)+self.ba_sign_array2_h[blob_i].shape)
+            ba_sign_array2_blob_d=cuda.to_device(ba_sign_array2_blob_h)
+            mask=run_cuda_duplicate_detection_large(ba_sign_array2_blob_h)
+
+            mask_d=cuda.to_device(mask)
+            threads_per_block_2d=(32,32)
+            blocks_per_grid_x=math.ceil(ba_sign_array2_blob_h.shape[0]/threads_per_block_2d[0])
+            blocks_per_grid_y=math.ceil(ba_sign_array2_blob_h.shape[1]/threads_per_block_2d[1])
+            fill_axis1[(blocks_per_grid_x,blocks_per_grid_y),threads_per_block_2d](ba_sign_array2_blob_d,mask_d,3)
+            cuda.synchronize()
+            
+            ba_sign_array2_blob_h=ba_sign_array2_blob_d.copy_to_host()
+            ba_sign_array2_blob_flat=ba_sign_array2_blob_h.flatten()
+            nz_ba_sign_array2_blob_flat=get_non_zeros(ba_sign_array2_blob_flat.astype('int32'),3)
+            ba_sign_array2_blob_h=nz_ba_sign_array2_blob_flat.reshape([int(len(nz_ba_sign_array2_blob_flat)/self.layer_n),self.layer_n])
+            
+            #print(ba_sign_array2_blob_h.shape)
+            ba_sign_array2_blob_h=ba_sign_array2_blob_h.astype(str)
             join=lambda x: np.asarray(''.join(x).split('2')[0],dtype=object)
             ba_sign_array2_blob_h=np.apply_along_axis(join,1,ba_sign_array2_blob_h)
             ba_sign_array2_blob_h=np.unique(ba_sign_array2_blob_h)

@@ -18,13 +18,13 @@ import numpy as np
 
 BSP2=9
 BLOCK_SIZE=2**BSP2
-@cuda.jit('void(int32[:], int32[:], int32[:], int32, int32)')
-def prefix_sum_nzmask_block(a,b,s,nzm,length):
+@cuda.jit('void(int32[:], int32[:], int32[:], int32, int32, int32)')
+def prefix_sum_nzmask_block(a,b,s,nzm,length,n):
     ab=cuda.shared.array(shape=(BLOCK_SIZE),dtype=int32)
     tid=cuda.blockIdx.x*cuda.blockDim.x+cuda.threadIdx.x
     if tid<length:
         if nzm==1:
-            ab[cuda.threadIdx.x]=int32(a[tid]!=0)
+            ab[cuda.threadIdx.x]=int32(a[tid]!=n)
         else:
             ab[cuda.threadIdx.x]=int32(a[tid])
     for j in range(0,BSP2):
@@ -47,35 +47,35 @@ def pref_sum_update(b,s,length):
     if tid<length:
         b[tid]+=s[cuda.blockIdx.x]
 
-@cuda.jit('void(int32[:], int32[:], int32[:], int32)')
-def map_non_zeros(a,prefix_sum,nz,length):
+@cuda.jit('void(int32[:], int32[:], int32[:], int32, int32)')
+def map_non_zeros(a,prefix_sum,nz,length,n):
     tid=cuda.blockIdx.x*cuda.blockDim.x+cuda.threadIdx.x
     if tid<length:
         input_value=a[tid]
-        if input_value!=0:
+        if input_value!=n:
             index=prefix_sum[tid]
             nz[index-1]=input_value
 
-def pref_sum(a,asum,nzm):
+def pref_sum(a,asum,nzm,n):
     block=BLOCK_SIZE
     length=a.shape[0]
     grid=int((length+block-1)/block)
     bs=cuda.device_array(shape=(grid),dtype=np.int32)
-    prefix_sum_nzmask_block[grid,block](a,asum,bs,nzm,length)
+    prefix_sum_nzmask_block[grid,block](a,asum,bs,nzm,length,n)
     if grid>1:
         bssum=cuda.device_array(shape=(grid),dtype=np.int32)
-        pref_sum(bs,bssum,0)
+        pref_sum(bs,bssum,0,n)
         pref_sum_update[grid-1,block](asum,bssum,length)
 
-def get_non_zeros(a):
+def get_non_zeros(a,n=0):
     ac=np.ascontiguousarray(a)
     ad=cuda.to_device(ac)
     bd=cuda.device_array_like(ad)
-    pref_sum(ad,bd,int(1))
+    pref_sum(ad,bd,int(1),n)
     non_zero_count=int(bd[bd.shape[0]-1])
     non_zeros=cuda.device_array(shape=(non_zero_count),dtype=np.int32)
     block=BLOCK_SIZE
     length=a.shape[0]
     grid=int((length+block-1)/block)
-    map_non_zeros[grid,block](ad,bd,non_zeros,length)
+    map_non_zeros[grid,block](ad,bd,non_zeros,length,n)
     return non_zeros.copy_to_host()
