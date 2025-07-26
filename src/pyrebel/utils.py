@@ -337,7 +337,7 @@ def draw_blocks(orig_img_array_d,img_array_d,block_img_d,width):
                     block_img_d[rr][cc][2]=int(sum_b/(width**2))
                     
 def run_cuda_duplicate_detection_large(arr):
-    """Marks duplicates in 3D array along axis-2"""
+    """Marks duplicates in 3D array along axis-1"""
     
     assert arr.ndim == 3, "Input must be a 3D array"
     a, b, c = arr.shape  # shape: (batches, rows, cols)
