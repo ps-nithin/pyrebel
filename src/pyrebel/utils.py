@@ -395,4 +395,43 @@ def fill_axis1(array_d,mask_d,val):
             for index in range(array_d.shape[2]):
                 array_d[r][c][index]=val
 
+@cuda.jit
+def get_row_wise_count(mask_d,count_d):
+    r,c=cuda.grid(2)
+    if r<mask_d.shape[0] and c<mask_d.shape[1]:
+        if not mask_d[r][c]:
+            cuda.atomic.add(count_d,r,1)
+
+@cuda.jit
+def is_blob_inside(bound_size_i_d,bound_size_i_cum_d,bound_data_d,bound_seed_d,shape_d,is_inside_d):
+    idx,idy=cuda.grid(2)
+    if idx<len(bound_size_i_d) and idy<len(bound_size_i_d) and idx!=idy and idx>1 and idy>1:
+        polygon_len=bound_size_i_d[idx]    
+            
+        ii=bound_seed_d[idy] 
+        x=int(ii/shape_d[1])
+        y=ii%shape_d[1]       
+
+
+        inside = False
+        j = polygon_len - 1
+
+        for i in range(polygon_len):
+            ii=bound_data_d[bound_size_i_cum_d[idx]+i]
+            xi=int(ii/shape_d[1])
+            yi=ii%shape_d[1]
+            jj=bound_data_d[bound_size_i_cum_d[idx]+j]
+            xj=int(jj/shape_d[1])
+            yj=jj%shape_d[1]
+            
+
+            # Check if the ray crosses the edge
+            intersect = ((yi > y) != (yj > y)) and \
+                        (x < (xj - xi) * (y - yi) / (yj - yi + 1e-10) + xi)
+            if intersect:
+                inside = not inside
+            j = i
+        
+        if inside:
+            cuda.atomic.add(is_inside_d,idy,1)
                 
