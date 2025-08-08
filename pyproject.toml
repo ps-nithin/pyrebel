@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pyrebel"
-version = "1.2.0"
+version = "1.2.1"
 dependencies = [
   "numpy",
   "numba",
@@ -19,13 +19,14 @@ maintainers = [
 ]
 description = "A pure python library that implements abstraction of data."
 readme = "README.md"
-license = "GPL-3.0-only"
-license-files = ["LICENSE.txt"]
+license = {file = "LICENSE.txt"}
+
 keywords = ["data", "abstraction", "vision", "machinelearning", "patternrecognition", "imagerecognition",]
 classifiers = [
   "Development Status :: 4 - Beta",
   "Programming Language :: Python",
   "Environment :: GPU :: NVIDIA CUDA",
+  "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
   "Intended Audience :: Science/Research",
   "Intended Audience :: Developers",
   "Intended Audience :: Education",
