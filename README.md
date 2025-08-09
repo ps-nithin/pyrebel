@@ -72,7 +72,7 @@ This is a demo of pattern recognition achieved using data abstraction.<br>
    
 To reset the knowledge base just delete file 'know_base.pkl' in the current working directory. The program expects a single pattern in the input image. Otherwise, a pattern has to be selected by changing variable 'blob_index' accordingly.
 
-For learning / recognizing multiple patterns, use demo script `python3 pyrebel_main_learn_multiple.py` instead of `python3 pyrebel_main_learn.py`.
+For learning / recognizing multiple patterns, use demo script `pyrebel_main_learn_multiple.py` instead of `python3 pyrebel_main_learn.py`.
 
 # Docs <a href="https://github.com/ps-nithin/pyrebel/blob/main/docs/DOCS.md">here</a>
 # Read more about abstraction <a href="https://github.com/ps-nithin/pyrebel/blob/main/docs/intro-r2.pdf">here</a>
