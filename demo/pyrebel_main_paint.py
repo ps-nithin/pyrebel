@@ -66,13 +66,13 @@ while 1:
     
     k=0
     while 1:
-        n=1
+        n=block_threshold
         while 1:
             draw_blocks[blockspergrid,threadsperblock](img_array_rgb_d,edges_img_d,block_img_d,n)
             cuda.synchronize()
-            if n==block_threshold:
+            if n<2:
                 break
-            n+=1
+            n-=1
         k+=1
         print(k,"/",paint_threshold)
         if k==paint_threshold:
