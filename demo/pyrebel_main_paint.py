@@ -53,7 +53,7 @@ while 1:
     else:
         print("No input file.")
     img_array_rgb_d=cuda.to_device(img_array_rgb)
-    edge=Edge(img_array)
+    edge=Edge(img_array,False)
     edge.find_edges(edge_threshold)
     edges=edge.get_edges()
     edges_img_d=cuda.to_device(edges)    
