@@ -149,6 +149,9 @@ while 1:
         # Find signatures for the layer    
         is_finished=l.find_signatures2(ba_sign,ba_size)    
         if is_finished or is_finished_abs:
+            ist=time.time()
+            l.init_signatures()
+            print("init signatures in",time.time()-ist)        
             break
             
     print("found signatures in",time.time()-fst)
@@ -156,7 +159,7 @@ while 1:
     top_n=3
     if args.recognize:
         rt=time.time()
-        recognized=l.recognize_sym(blob_indices,top_n)
+        recognized=l.recognize_sym(blob_indices,top_n,"image")
         print("symbols found=")
         for i in recognized[0]:
             print(i)
@@ -165,9 +168,9 @@ while 1:
         time.sleep(3)
     if args.learn:
         lt=time.time()
-        signs=l.learn_sym(blob_indices,sign_name)
+        signs=l.learn_sym(blob_indices,sign_name.split(".")[0],"image")
         sign_len=len(signs)
-        print("learning",[sign_name],signs,"len(signs)=",sign_len)
+        print("learning",[sign_name.split(".")[0]],signs,"len(signs)=",sign_len)
         print("learn time=",time.time()-lt)
         l.write_know_base()  
     
