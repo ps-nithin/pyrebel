@@ -2,7 +2,7 @@
 Consider two images, the first image is to be learned and the second is to be recognized. <br>
 <img src="sign-images/s.png"></img>&nbsp;1.&nbsp;<img src="sign-images/s-ripple.png"></img>&nbsp;2.
 <br><br>
-(a) The first step is to find the farthest points in the pattern. This divides the pattern into two parts and the points 1 and 2 are the first abstract points.<br>
+(a) The first step is to find the farthest points in the pattern. This divides the pattern into two parts and the points 1 and 2 are the first two abstract points.<br>
 <img src="sign-images/learn/s2.png"></img>&nbsp;3.&nbsp;<img src="sign-images/recognize/s-ripple2.png"></img>&nbsp;4.
 <br><br>
 (b) The next step is to find a point farthest from the line joining abstract points in the previous step. Thus, we obtain the third point. The pattern is now divided into three parts. The abstract points are numbered in order as you travel along the pattern in one direction. (here, clockwise direction starting from point 1)<br>
