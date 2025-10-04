@@ -51,3 +51,4 @@ Thus we get the following signatures.<br>
 (d) The final step is to compare the signatures.<br>
 37.<img src="sign-images/learn/sign-learn.png"></img>&nbsp;38.<img src="sign-images/recognize/recognize-sign.png"></img>
 <br><br>
+As you can see, the signatures obtained from recognition image matches with the signatures obtained from the learning image.
