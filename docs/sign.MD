@@ -5,7 +5,7 @@ Consider two images, the first image is to be learned and the second is to be re
 (a) The first step is to find the farthest points in the pattern. This divides the pattern into two parts and the points 1 and 2 are the first abstract points.<br>
 <img src="sign-images/learn/s2.png"></img>&nbsp;3.&nbsp;<img src="sign-images/recognize/s-ripple2.png"></img>&nbsp;4.
 <br><br>
-(b) The next step is to find a point farthest from the line joining abstract points in the previous step. Thus, we obtain point the third point. The pattern is now divided into three parts. The abstract points are numbered in order as you travel along the pattern in one direction. (here, clockwise direction)<br>
+(b) The next step is to find a point farthest from the line joining abstract points in the previous step. Thus, we obtain point the third point. The pattern is now divided into three parts. The abstract points are numbered in order as you travel along the pattern in one direction, starting from point 1. (here, clockwise direction)<br>
 <img src="sign-images/learn/s3.png"></img>&nbsp;5.&nbsp;<img src="sign-images/recognize/s-ripple3.png"></img>&nbsp;6.
 <br><br>
 (c) The next step is to find the signature, which is the concavity or convexity of each abstract points as you travel along the pattern in a specific order (here, clockwise direction).
