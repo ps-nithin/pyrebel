@@ -8,7 +8,7 @@ Consider two images, the first image is to be learned and the second is to be re
 (b) The next step is to find a point farthest from the line joining abstract points in the previous step. Thus, we obtain point the third point. The abstract points are numbered in order as you travel along the pattern in one direction. (here, clockwise direction)<br>
 <img src="sign-images/learn/s3.png"></img>&nbsp;5.&nbsp;<img src="sign-images/recognize/s-ripple3.png"></img>&nbsp;6.
 <br><br>
-(c) The next is to find the signature, which is the concavity or convexity of each abstract points as you travel along the pattern in a specific order (here, clockwise direction).
+(c) The next step is to find the signature, which is the concavity or convexity of each abstract points as you travel along the pattern in a specific order (here, clockwise direction).
 Thus we get the following signatures.<br>
 <img src="sign-images/learn/s3-sign-join.png"></img>&nbsp;7.&nbsp;<img src="sign-images/recognize/s-ripple3-sign-join.png"></img>&nbsp;8.
 <br><br>
