@@ -52,4 +52,4 @@ Thus we get the following signatures.<br>
 <img src="sign-images/learn/sign-learn.png"></img>&nbsp;37.&nbsp;<img src="sign-images/recognize/recognize-sign.png"></img>&nbsp;38.
 <br><br>
 As you can see, the signatures obtained from recognition image (green) matches with the signatures obtained from the learning image (blue).(The signatures may be rotated).
-Thus, the image is recognized with weightage equalling the number of signatures matched (here 8).
+Thus, the image is recognized with weightage equalling the number of signatures matched.
