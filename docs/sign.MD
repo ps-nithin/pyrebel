@@ -13,11 +13,11 @@ Thus we get the following signatures.<br>
 7.<img src="sign-images/learn/s3-sign-join.png"></img>&nbsp;8.<img src="sign-images/recognize/s-ripple3-sign-join.png"></img>
 <br><br>
 (c) The process is repeated till the farthest point is less than the threshold.<br>
-9.<img src="sign-images/learn/s4.png"></img>&nbsp;8.<img src="sign-images/recognize/s-ripple4.png"></img>
+9.<img src="sign-images/learn/s4.png"></img>&nbsp;10.<img src="sign-images/recognize/s-ripple4.png"></img>
 <br><br>
 11.<img src="sign-images/learn/s4-sign-join.png"></img>&nbsp;12.<img src="sign-images/recognize/s-ripple4-sign-join.png"></img>
 <br><br>
-11.<img src="sign-images/learn/s5.png"></img>&nbsp;10.<img src="sign-images/recognize/s-ripple5.png"></img>
+13.<img src="sign-images/learn/s5.png"></img>&nbsp;14.<img src="sign-images/recognize/s-ripple5.png"></img>
 <br><br>
-13.<img src="sign-images/learn/s5-sign-join.png"></img>&nbsp;14.<img src="sign-images/recognize/s-ripple5-sign-join.png"></img>
+15.<img src="sign-images/learn/s5-sign-join.png"></img>&nbsp;16.<img src="sign-images/recognize/s-ripple5-sign-join.png"></img>
 <br><br>
