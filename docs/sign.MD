@@ -1,5 +1,5 @@
 # How does the program learn and recognize patterns?<br>
-Consider two images, the <a href="sign-images/s.png">first</a> image is to be learned and the <a=href="sign-images/s-ripple.png">second</a> is to be recognized. <br>
+Consider two images, the <a href="sign-images/s.png">first</a> image is to be learned and the <a href="sign-images/s-ripple.png">second</a> is to be recognized. <br>
 <img src="sign-images/learn/s.png"></img>&nbsp;1.&nbsp;<img src="sign-images/recognize/s-ripple.png"></img>&nbsp;2.
 <br><br>
 (a) The first step is to find the farthest points in the pattern. This divides the pattern into two parts and the points 1 and 2 are the first two abstract points.<br>
