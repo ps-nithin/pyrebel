@@ -74,5 +74,5 @@ To reset the knowledge base just delete file 'know_base.pkl' in the current work
 See how the program learns and recognizes patterns <a href="docs/sign.MD">here</a><br>
 
 # Docs <a href="https://github.com/ps-nithin/pyrebel/blob/main/docs/DOCS.md">here</a>
-# Read more about abstraction <a href="https://github.com/ps-nithin/pyrebel/blob/main/docs/intro-r2.pdf">here</a>
+# Read more <a href="https://github.com/ps-nithin/pyrebel/blob/main/docs/intro-r2.pdf">here</a>
 # Let the data shine!
