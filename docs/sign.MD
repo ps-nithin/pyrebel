@@ -10,33 +10,33 @@ Consider two images, the first image is to be learned and the second is to be re
 <br><br>
 (c) The next is to find the signature, which is the concavity or convexity of each abstract points as you travel along the pattern in a specific order (here, clockwise direction).
 Thus we get the following signatures.<br>
-<img src="sign-images/learn/s3-sign-join.png"></img>&nbsp;7.<img src="sign-images/recognize/s-ripple3-sign-join.png"></img>
+<img src="sign-images/learn/s3-sign-join.png"></img>&nbsp;7.<img src="sign-images/recognize/s-ripple3-sign-join.png"></img>8.
 <br><br>
 (c) The process is repeated till the farthest point is less than the threshold or the program reaches the specified number of layers. Here 10.<br>
 # Layer 4
-<img src="sign-images/learn/s4.png"></img>&nbsp;9.<img src="sign-images/recognize/s-ripple4.png"></img>
+<img src="sign-images/learn/s4.png"></img>&nbsp;9.<img src="sign-images/recognize/s-ripple4.png"></img>10.
 <br><br>
-<img src="sign-images/learn/s4-sign-join.png"></img>&nbsp;11.<img src="sign-images/recognize/s-ripple4-sign-join.png"></img>
+<img src="sign-images/learn/s4-sign-join.png"></img>&nbsp;11.<img src="sign-images/recognize/s-ripple4-sign-join.png"></img>12.
 <br><br>
 # Layer 5
-<img src="sign-images/learn/s5.png"></img>&nbsp;13.<img src="sign-images/recognize/s-ripple5.png"></img>
+<img src="sign-images/learn/s5.png"></img>&nbsp;13.<img src="sign-images/recognize/s-ripple5.png"></img>14.
 <br><br>
-<img src="sign-images/learn/s5-sign-join.png"></img>&nbsp;15.<img src="sign-images/recognize/s-ripple5-sign-join.png"></img>
+<img src="sign-images/learn/s5-sign-join.png"></img>&nbsp;15.<img src="sign-images/recognize/s-ripple5-sign-join.png"></img>16.
 <br><br>
 # Layer 6
-<img src="sign-images/learn/s6.png"></img>&nbsp;17.<img src="sign-images/recognize/s-ripple6.png"></img>
+<img src="sign-images/learn/s6.png"></img>&nbsp;17.<img src="sign-images/recognize/s-ripple6.png"></img>18.
 <br><br>
-<img src="sign-images/learn/s6-sign-join.png"></img>&nbsp;19.<img src="sign-images/recognize/s-ripple6-sign-join.png"></img>
+<img src="sign-images/learn/s6-sign-join.png"></img>&nbsp;19.<img src="sign-images/recognize/s-ripple6-sign-join.png"></img>20.
 <br><br>
 # Layer 7
-<img src="sign-images/learn/s7.png"></img>&nbsp;21.<img src="sign-images/recognize/s-ripple7.png"></img>
+<img src="sign-images/learn/s7.png"></img>&nbsp;21.<img src="sign-images/recognize/s-ripple7.png"></img>22.
 <br><br>
-<img src="sign-images/learn/s7-sign-join.png"></img>&nbsp;23.<img src="sign-images/recognize/s-ripple7-sign-join.png"></img>
+<img src="sign-images/learn/s7-sign-join.png"></img>&nbsp;23.<img src="sign-images/recognize/s-ripple7-sign-join.png"></img>24.
 <br><br>
 # Layer 8
-<img src="sign-images/learn/s8.png"></img>&nbsp;25.<img src="sign-images/recognize/s-ripple8.png"></img>
+<img src="sign-images/learn/s8.png"></img>&nbsp;25.<img src="sign-images/recognize/s-ripple8.png"></img>26.
 <br><br>
-<img src="sign-images/learn/s8-sign-join.png"></img>&nbsp;27.<img src="sign-images/recognize/s-ripple8-sign-join.png"></img>
+<img src="sign-images/learn/s8-sign-join.png"></img>&nbsp;27.<img src="sign-images/recognize/s-ripple8-sign-join.png"></img>28.
 <br><br>
 # Layer 9
 <img src="sign-images/learn/s9.png"></img>&nbsp;29.<img src="sign-images/recognize/s-ripple9.png"></img>30.
