@@ -21,3 +21,7 @@ Thus we get the following signatures.<br>
 <br><br>
 15.<img src="sign-images/learn/s5-sign-join.png"></img>&nbsp;16.<img src="sign-images/recognize/s-ripple5-sign-join.png"></img>
 <br><br>
+17.<img src="sign-images/learn/s6.png"></img>&nbsp;18.<img src="sign-images/recognize/s-ripple6.png"></img>
+<br><br>
+19.<img src="sign-images/learn/s6-sign-join.png"></img>&nbsp;20.<img src="sign-images/recognize/s-ripple6-sign-join.png"></img>
+<br><br>
