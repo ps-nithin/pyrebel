@@ -12,7 +12,7 @@ Consider two images, the first image is to be learned and the second is to be re
 Thus we get the following signatures.<br>
 7.<img src="sign-images/learn/s3-sign-join.png"></img>&nbsp;8.<img src="sign-images/recognize/s-ripple3-sign-join.png"></img>
 <br><br>
-(c) The process is repeated till the farthest point is less than the threshold.<br>
+(c) The process is repeated till the farthest point is less than the threshold or the program reaches the specified number of layers. Here 10.<br>
 # Layer 4
 9.<img src="sign-images/learn/s4.png"></img>&nbsp;10.<img src="sign-images/recognize/s-ripple4.png"></img>
 <br><br>
