@@ -48,4 +48,6 @@ Thus we get the following signatures.<br>
 <br><br>
 35.<img src="sign-images/learn/s10-sign-join.png"></img>&nbsp;36.<img src="sign-images/recognize/s-ripple10-sign-join.png"></img>
 <br><br>
-
+(d) The final step is to compare the signatures.
+37.<img src="sign-images/learn/learn-sign.png"></img>&nbsp;38.<img src="sign-images/recognize/recognize-sign.png"></img>
+<br><br>
