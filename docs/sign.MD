@@ -38,3 +38,14 @@ Thus we get the following signatures.<br>
 <br><br>
 27.<img src="sign-images/learn/s8-sign-join.png"></img>&nbsp;28.<img src="sign-images/recognize/s-ripple8-sign-join.png"></img>
 <br><br>
+# Layer 9
+29.<img src="sign-images/learn/s9.png"></img>&nbsp;30.<img src="sign-images/recognize/s-ripple9.png"></img>
+<br><br>
+31.<img src="sign-images/learn/s9-sign-join.png"></img>&nbsp;32.<img src="sign-images/recognize/s-ripple9-sign-join.png"></img>
+<br><br>
+# Layer 10
+33.<img src="sign-images/learn/s10.png"></img>&nbsp;34.<img src="sign-images/recognize/s-ripple10.png"></img>
+<br><br>
+35.<img src="sign-images/learn/s10-sign-join.png"></img>&nbsp;36.<img src="sign-images/recognize/s-ripple10-sign-join.png"></img>
+<br><br>
+
