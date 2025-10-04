@@ -8,6 +8,12 @@ Consider two images the first image is to be learned and the second is to be rec
 (b) The next step is to find a point fartest from the line joining abstract points in the previous step. Thus, we obtain point 3.<br>
 5.<img src="sign-images/learn/s3.png"></img>&nbsp;6.<img src="sign-images/recognize/s-ripple3.png"></img>
 <br><br>
+(c) The next is to find the signature, which is the concavity or convexity of each abstract points as you travel along the pattern in a specific order (here, clockwise direction).
+Thus we get the following signatures.<br>
+7.<img src="sign-images/learn/s3-sign-join.png"></img>&nbsp;8.<img src="sign-images/recognize/s-ripple3-sign-join.png"></img>
+<br><br>
 (c) The process is repeated till the farthest point is less than the threshold.<br>
-7.<img src="sign-images/learn/s4.png"></img>&nbsp;8.<img src="sign-images/recognize/s-ripple4.png"></img>
+9.<img src="sign-images/learn/s4.png"></img>&nbsp;8.<img src="sign-images/recognize/s-ripple4.png"></img>
+<br><br>
+11.<img src="sign-images/learn/s4-sign-join.png"></img>&nbsp;12.<img src="sign-images/recognize/s-ripple4-sign-join.png"></img>
 <br><br>
