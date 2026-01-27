@@ -32,7 +32,7 @@ For example,<br>
    The output is written to 'output.png'.
    Below is a sample input image,<br><br>
    <img src="https://github.com/ps-nithin/pyrebel/raw/c3ee0182aa5646a834d1e8c1f18c30d5bacd378d/images/small_wildlife.jpg"></img><br>Below is the output image,<br><br><img src="https://github.com/ps-nithin/pyrebel/raw/223e442aa8cdc34972f5c37d7a91240f725b7beb/images/output_wildlife.png"></img><br>
-   See how edge detection works <a href="docs/edge_detection.md">here</a><br>
+   See how edge detection works <a href="https://github.com/ps-nithin/pyrebel/raw/d21d8fe5c4722626f4f160144682b6eaab7c0efe/docs/edge_detection.md">here</a><br>
 
 ## 3. 2D sketch demo
 This is a demo of 2D sketch formation using data abstraction.<br>
