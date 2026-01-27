@@ -1,5 +1,5 @@
 # How does edge detection work?<br>
-<img src='../images/Figure_1.png'></img><br>
+<img src='https://github.com/ps-nithin/pyrebel/raw/5d4158b02ef84751191a6de62c1681d7f7776237/images/Figure_1.png'></img><br>
 An image can be divided into rows. Each row consist of intensities of color at each point across the row. A graph / 2D image as shown above is plotted such that each point in the row is plotted along the x-axis and the intensities at each point in the row is plotted along the y-axis. In this way, each row in the image is represented as a 2D graph containing the position in the x-axis and its intensity in the y-axis. For eq. running the below code displays the 2D graph at each row of the input image.<br><br>
 ```python3 image_graph.py --input images/lotus.png```<br><br>
 Similarly, running the below code displays the abstracted 2d graph for the input row and image as shown in the above image.<br><br>
