@@ -60,7 +60,7 @@ while 1:
     img_array_d=cuda.to_device(img_array)
     edge=Edge(img_array)
     edge.find_edges(edge_threshold)
-    edges=edge.get_edges_bw()
+    edges=edge.get_edges_one(0)
     
     # Initialize the preprocessing class.
     pre=Preprocess(edges)

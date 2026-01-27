@@ -18,13 +18,21 @@ from pyrebel.utils import *
 import math
 import numpy as np
 
-class Edge:
-    def __init__(self,img_array,invert=-1):
-        self.img_array_orig=img_array
-        self.invert_arg=invert
-        self.out_image_hor_h=[]
-        self.final_image_h=[]
+@cuda.jit
+def clean_image2(img_array_d,out_image_d):
+    r,c=cuda.grid(2)
+    if 1<r<img_array_d.shape[0]-1 and 1<c<img_array_d.shape[1]-1 and img_array_d[r][c]!=0:
+        color=img_array_d[r][c]
+        if img_array_d[r-1][c]!=color and img_array_d[r-1][c+1]!=color and img_array_d[r][c+1]!=color and img_array_d[r+1][c+1]!=color and img_array_d[r+1][c]!=color\
+        and img_array_d[r+1][c-1]!=color and img_array_d[r][c-1]!=color and img_array_d[r-1][c-1]!=color:
+            out_image_d[r][c]=0
         
+class Edge:
+    def __init__(self,img_array):
+        self.img_array_orig=img_array
+        self.invert_arg=-1
+        self.out_image_hor_h=[]
+
     def find_edges(self,abs_threshold):
         img_array=self.img_array_orig
         shape_orig=self.img_array_orig.shape
@@ -92,14 +100,14 @@ class Edge:
             # Get the convexity array.
             abs_sign45=abs45.get_sign()
             abs_sign45_d=cuda.to_device(abs_sign45)
-            if self.invert_arg==-1:
-                white_count45=np.count_nonzero(abs_sign45==1)
-                black_count45=np.count_nonzero(abs_sign45==-1)
-                if white_count45>black_count45:
-                    invert45=True
-                else:
-                    invert45=False
-                self.invert_arg=invert45
+
+            white_count45=np.count_nonzero(abs_sign45==1)
+            black_count45=np.count_nonzero(abs_sign45==-1)
+            if white_count45>black_count45:
+                self.invert_arg=1
+            else:
+                self.invert_arg=0
+
             print("len(abs_points)=",len(abs_points45),"diagonal",i)
 
             abs_draw45=decrement_by_one_cuda(abs_points45)
@@ -109,7 +117,7 @@ class Edge:
             out_image45_d=cuda.to_device(out_image45)
             
             # Draw the abstract points to output image.
-            draw_pixels_cuda2(abs_draw45_d,abs_sign45_d,self.invert_arg,255,out_image45_d)
+            draw_pixels_cuda22(abs_draw45_d,abs_sign45_d,out_image45_d)
             cuda.synchronize()
             
             image_rev_rotate45[blockspergrid_rot45,threadsperblock](out_image45_d,img_rot45_mask_d,img_rev_rot45_d)
@@ -131,8 +139,8 @@ class Edge:
         blockspergrid_y=math.ceil(shape_orig[1]/threadsperblock[1])
         blockspergrid=(blockspergrid_x,blockspergrid_y)
         
-        # Combine the results of horizontal and vertical abstraction.
-        clone_image[blockspergrid,threadsperblock](out_image_45_2_d,out_image_45_1_d,255)
+        # Combine the results of diagonal abstraction.
+        clone_image_nonzero[blockspergrid,threadsperblock](out_image_45_2_d,out_image_45_1_d)
         cuda.synchronize()
         
         # Start of vertical and horizontal abstraction
@@ -173,12 +181,12 @@ class Edge:
             abs_sign_d=cuda.to_device(abs_sign)
             white_count=np.count_nonzero(abs_sign==1)
             black_count=np.count_nonzero(abs_sign==-1)
-            if self.invert_arg==-1:
-                if white_count>black_count:
-                    invert=True
-                else:
-                    invert=False
-                self.invert_arg=invert
+
+            if white_count>black_count:
+                self.invert_arg=1
+            else:
+                self.invert_arg=0
+            
             print("len(abs_points)=",len(abs_points),"perpendicular",i)
 
             abs_draw=decrement_by_one_cuda(abs_points)
@@ -188,7 +196,7 @@ class Edge:
             out_image_d=cuda.to_device(out_image)
             
             # Draw the abstract points to output image.
-            draw_pixels_cuda2(abs_draw_d,abs_sign_d,self.invert_arg,255,out_image_d)
+            draw_pixels_cuda22(abs_draw_d,abs_sign_d,out_image_d)
             if i==0:
                 out_image_hor_d=out_image_d
                 img_array_rot=np.rot90(img_array,k=1,axes=(0,1))
@@ -206,22 +214,68 @@ class Edge:
         blockspergrid=(blockspergrid_x,blockspergrid_y)
         
         # Combine the results of horizontal and vertical abstraction.
-        clone_image[blockspergrid,threadsperblock](out_image_ver_d,out_image_hor_d,255)
+        clone_image_nonzero[blockspergrid,threadsperblock](out_image_ver_d,out_image_hor_d)
         cuda.synchronize()
         
-        clone_image[blockspergrid,threadsperblock](out_image_45_1_d,out_image_hor_d,255)
+        # Combine the results of perpendicular and diagonal abstraction
+        clone_image_nonzero[blockspergrid,threadsperblock](out_image_45_1_d,out_image_hor_d)
         cuda.synchronize()
-        clean_quant_img[blockspergrid,threadsperblock](out_image_hor_d)
+        out_image2_d=cuda.to_device(out_image_hor_d.copy_to_host())
+        
+        # Remove small specks 
+        clean_image2[blockspergrid,threadsperblock](out_image_hor_d,out_image2_d)
         cuda.synchronize()
-        self.out_image_hor_h=out_image_hor_d.copy_to_host()
+        self.out_image_hor_h=out_image2_d.copy_to_host()        
+        
+    def get_edges_both(self):
+        """ Outputs both light and dark (convex and concave) edges in the image."""
+        return self.out_image_hor_h
+        
+    def get_edges_one_original(self,invert=-1):
+        """ Outputs either light (convex / positive sign) or dark (concave / negative sign) edges painted with original color (grayscale) in the image."""
+        if invert==-1:
+            if self.invert_arg==1:
+                draw_color=255
+            elif self.invert_arg==0:
+                draw_color=100
+        elif invert==0:
+            draw_color=100
+        elif invert==1:
+            draw_color=255            
+        
         img_array_orig_d=cuda.to_device(self.img_array_orig)
+        out_image_hor_d=cuda.to_device(self.out_image_hor_h)
         final_image=np.zeros(self.img_array_orig.shape,dtype=np.int32)
         final_image_d=cuda.to_device(final_image)
-        clone_image2[blockspergrid,threadsperblock](img_array_orig_d,out_image_hor_d,final_image_d,not self.invert_arg)
+        threadsperblock=(16,16)
+        blockspergrid_x=math.ceil(self.img_array_orig.shape[0]/threadsperblock[0])
+        blockspergrid_y=math.ceil(self.img_array_orig.shape[1]/threadsperblock[1])
+        blockspergrid=(blockspergrid_x,blockspergrid_y)
+        clone_image2[blockspergrid,threadsperblock](img_array_orig_d,out_image_hor_d,final_image_d,draw_color)
         cuda.synchronize()
-        self.final_image_h=final_image_d.copy_to_host()
+        return final_image_d.copy_to_host()
+
         
-    def get_edges_bw(self):
-        return self.out_image_hor_h
-    def get_edges(self):
-        return self.final_image_h
+    def get_edges_one(self,invert=-1):
+        """ Outputs either light (convex / positive sign) or dark (concave / negative sign) edges in the image."""
+        
+        if invert==-1:
+            if self.invert_arg==1:
+                draw_color=255
+            elif self.invert_arg==0:
+                draw_color=100
+        elif invert==0:
+            draw_color=100
+        elif invert==1:
+            draw_color=255            
+        edges_single=np.zeros(self.img_array_orig.shape,dtype=np.uint8)
+        edges_single_d=cuda.to_device(edges_single)
+        out_image2_d=cuda.to_device(self.out_image_hor_h)
+        threadsperblock=(16,16)
+        blockspergrid_x=math.ceil(self.img_array_orig.shape[0]/threadsperblock[0])
+        blockspergrid_y=math.ceil(self.img_array_orig.shape[1]/threadsperblock[1])
+        blockspergrid=(blockspergrid_x,blockspergrid_y)
+        clone_image[blockspergrid,threadsperblock](out_image2_d,edges_single_d,draw_color)
+        cuda.synchronize()
+        return edges_single_d.copy_to_host()
+       

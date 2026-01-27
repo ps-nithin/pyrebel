@@ -53,9 +53,9 @@ while 1:
     else:
         print("No input file.")
     img_array_rgb_d=cuda.to_device(img_array_rgb)
-    edge=Edge(img_array,False)
+    edge=Edge(img_array)
     edge.find_edges(edge_threshold)
-    edges=edge.get_edges()
+    edges=edge.get_edges_one(0)
     edges_img_d=cuda.to_device(edges)    
     block_img=np.zeros(img_array_rgb.shape,dtype=np.uint8)
     block_img_d=cuda.to_device(block_img)
@@ -74,8 +74,9 @@ while 1:
                 break
             n-=1
         k+=1
-        print(k,"/",paint_threshold)
+        print("painting",k,"/",paint_threshold,end='\r')
         if k==paint_threshold:
+            print()
             break
         img_array_rgb_d=block_img_d
     block_img_h=block_img_d.copy_to_host()

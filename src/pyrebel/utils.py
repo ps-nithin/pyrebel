@@ -16,6 +16,8 @@
 from numba import cuda
 from math import sqrt
 import numpy as np
+import os
+os.environ['NUMBA_CUDA_LOW_OCCUPANCY_WARNINGS']="0"
 
 def draw_pixels_cuda(pixels,i,img):        
     """Draws 'pixels' in 'img' with 'i'"""
@@ -170,16 +172,13 @@ def clone_image(img_array,img_clone,color):
             img_clone[r][c]=color
 
 @cuda.jit
-def clone_image2(img_array_orig,image_to_clone,img_cloned,inv):
+def clone_image2(img_array_orig,image_to_clone,img_cloned,color_to_clone):
     """Draws pixels in 'image_to_clone' with color '255' to 'img_cloned' with the color of corresponding pixels in 'img_array_orig'"""
     
     r,c=cuda.grid(2)
     if r>0 and r<img_array_orig.shape[0] and c>0 and c<img_array_orig.shape[1]:
-        if image_to_clone[r][c]==255:
-            if inv:
-                img_cloned[r][c]=img_array_orig[r][c]
-            else:
-                img_cloned[r][c]=255-img_array_orig[r][c]
+        if image_to_clone[r][c]==color_to_clone:
+            img_cloned[r][c]=img_array_orig[r][c]
             #cuda.atomic.add(count,0,1)
   
 @cuda.jit
@@ -434,4 +433,63 @@ def is_blob_inside(bound_size_i_d,bound_size_i_cum_d,bound_data_d,bound_seed_d,s
         
         if inside:
             cuda.atomic.add(is_inside_d,idy,1)
-                
+
+def draw_pixels_cuda22(pixels,exclusions,img):
+    """Draws 'pixels' in image 'img' with 'exclusions' with color 'i'"""
+    
+    draw_pixels_cuda22_[pixels.shape[0],1](pixels,exclusions,img)
+    cuda.synchronize()
+
+@cuda.jit
+def draw_pixels_cuda22_(pixels,exclusions,img):
+    """Draws 'pixels' in image 'img' with 'exclusions' with color 'i'"""
+    
+    cc=cuda.grid(1)
+    if cc<pixels.shape[0]:
+        r=int(pixels[cc]/img.shape[1])
+        c=pixels[cc]%img.shape[1]
+        if exclusions[cc]>0:
+            img[r][c]=255
+        else:
+            img[r][c]=100
+
+@cuda.jit
+def clone_image_nonzero(img_array,img_clone):
+    """Draws pixels in 'img_array' with color 'color' to 'img_clone'"""
+    
+    r,c=cuda.grid(2)
+    if r<img_array.shape[0] and c<img_array.shape[1]:
+        if img_array[r][c]!=0:
+            img_clone[r][c]=img_array[r][c]
+
+@cuda.jit
+def draw_blocks_edges(orig_img_array_d,img_array_d,block_img_d,width):
+    """Paints the output of edge detection. Squares of width 'width' with a single color are painted with
+    the average of the area in the original image."""
+    
+    r,c=cuda.grid(2)
+    count=0
+    if r<img_array_d.shape[0]-width+1 and c<img_array_d.shape[1]-width+1 and img_array_d[r][c]!=0:
+        area=0
+        sum_r=0
+        sum_g=0
+        sum_b=0
+        orig_color=img_array_d[r][c]
+        for rr in range(r,r+width):
+            for cc in range(c,c+width):
+                area+=1
+                if img_array_d[rr][cc]!=0 and img_array_d[rr][cc]==orig_color:
+                    count+=1
+        if count==area:
+            for rr in range(r,r+width):
+                for cc in range(c,c+width):
+                    sum_r+=orig_img_array_d[rr][cc][0]
+                    sum_g+=orig_img_array_d[rr][cc][1]
+                    sum_b+=orig_img_array_d[rr][cc][2]
+            for rr in range(r,r+width):
+                for cc in range(c,c+width):
+                    block_img_d[rr][cc][0]=int(sum_r/(width**2))
+                    block_img_d[rr][cc][1]=int(sum_g/(width**2))
+                    block_img_d[rr][cc][2]=int(sum_b/(width**2))
+
+                                            

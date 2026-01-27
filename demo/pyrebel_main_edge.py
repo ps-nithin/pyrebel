@@ -49,7 +49,8 @@ while 1:
     
     edge=Edge(img_array)
     edge.find_edges(edge_threshold)
-    edges=edge.get_edges()  # Or edges=edge.get_edges_bw() for black and white.
+    edges=edge.get_edges_one(0)
+    # Or edges=edge.get_edges_one(1) for light edges. Or edges=edge.get_edges_both() for both light and dark edges.
     
     # Save the output to disk.
     Image.fromarray(edges).convert('RGB').save("output.png")
