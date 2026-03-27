@@ -11,17 +11,20 @@ A pure python library that implements abstraction of data.<br><br>
 ```python3 -m pip install .```<br>
 
 # Running demo programs
-Demo programs are found in 'demo/' directory.<br>
+Demo programs are located in 'demo/' directory.<br>
 ```cd demo/```
 
 ## 1. Image abstraction demo
 Usage:<br>
-```python3 pyrebel_main.py --input <filename.png>```<br><br>
+```python3 pyrebel_main.py --input <filename.png>```<br>
 Optional arguments<br>
 ```--abs_threshold <value>``` Selects the threshold of abstraction. (Defaults to 5)<br><br>
 For example,<br>
-```python3 pyrebel_main.py --input images/abc.png --abs_threshold 10```<br><br>
-The output is written to 'output.png'
+```python3 pyrebel_main.py --input images/abc.png --abs_threshold 10```<br>
+The output is written to 'output.png'<br><br>
+To write layers to file use the following,<br>
+```python3 pyrebel_main_layers.py --input images/abc.png```<br>
+This will save the files as layer-3.png, layer-4.png etc.
 
 ## 2. Edge detection demo
 This is a demo of edge detection achieved using data abstraction.<br>
