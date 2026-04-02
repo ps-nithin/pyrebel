@@ -14,8 +14,8 @@
 #
 
 import numpy as np
-from PIL import Image
-import math,argparse,time,os
+from PIL import Image,ImageDraw,ImageFont
+import math,argparse,time,os,itertools
 from pyrebel.preprocess import Preprocess
 from pyrebel.abstract import Abstract
 from pyrebel.learn import Learn
@@ -76,6 +76,9 @@ while 1:
     # Get the 1D array.
     bound_data=pre.get_bound_data()
     bound_data_d=cuda.to_device(bound_data)
+    
+    img_scaled=pre.get_image_scaled()
+    nz_a=pre.get_bound_seed()
     
     # Initialize the abstract boundary.
     init_bound_abstract=pre.get_init_abstract()
@@ -165,6 +168,19 @@ while 1:
             print(i)
         print(recognized[1])
         print("recognize time=",time.time()-rt)
+        draw_image=Image.fromarray(img_scaled).convert('RGB')
+        draw = ImageDraw.Draw(draw_image)
+        text_color=(255,0,0)
+        font=ImageFont.truetype('DejaVuSans',30)
+        for i,blob_i in enumerate(blob_indices):
+            if len(list(itertools.chain.from_iterable(recognized[0][i])))==0:
+                continue
+            pos_i=nz_a[blob_i]
+            r=int(pos_i/scaled_shape[1])
+            c=pos_i%scaled_shape[1]       
+            text=recognized[0][i][0][0]+"("+str(recognized[0][i][0][1])+")"
+            draw.text((c,r),text,fill=text_color,font=font)
+        draw_image.save('output_text.png')
         time.sleep(3)
     if args.learn:
         lt=time.time()
