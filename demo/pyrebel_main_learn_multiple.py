@@ -28,13 +28,13 @@ from pyrebel.utils import *
 
 parser=argparse.ArgumentParser()
 parser.add_argument("-i","--input",help="Input file name.")
-parser.add_argument("-t","--threshold",help="Threshold of abstraction.")
+parser.add_argument("-t","--abs_threshold",help="Threshold of abstraction.")
 parser.add_argument("-l","--learn",help="Symbol to learn.")
 parser.add_argument("-r","--recognize",help="Recognize the signature.")
 
 args=parser.parse_args()
-if args.threshold:
-    abs_threshold=int(args.threshold)
+if args.abs_threshold:
+    abs_threshold=int(args.abs_threshold)
 else:
     abs_threshold=5
 
