@@ -66,15 +66,18 @@ Below is the sample input image,<br><br>
 ## 5. Pattern recognition demo
 This is a demo of pattern recognition achieved using data abstraction.<br>
 1. Learning<br>
-   Usage: ```python3 pyrebel_main_learn.py --learn /path/to/image/directory/```<br>
+   Usage: ```python3 pyrebel_main_learn_multiple.py --learn /path/to/image/directory/```<br>
    For example running
-   ```python3 pyrebel_main_learn.py --learn images/train-hand/``` learns all the images in the directory and links the filename with the signatures.<br><br>
+   ```python3 pyrebel_main_learn_multiple.py --learn images/train-hand/``` learns all the images in the directory and links the filename with the signatures.<br><br>
 3. Recognition<br>
-   Usage: ```python3 pyrebel_main_learn.py --recognize <filename>```<br>
+   Usage: ```python3 pyrebel_main_learn_multiple.py --recognize <filename>```<br>
    For example running
-   ```python3 pyrebel_main_learn.py --recognize images/recognize.png``` displays the symbols recognized in the file 'images/recognize.png'.
+   ```python3 pyrebel_main_learn_multiple.py --recognize images/recognize.png``` displays the symbols recognized in the file 'images/recognize.png'.<br><br>
+
+Optional arguments,
+   1. ```--abs_threshold <value>``` Selects the threshold of abstraction. (Defaults to 5)<br>
    
-To reset the knowledge base just delete file 'know_base.pkl' in the current working directory. The program expects a single pattern in the input image. Otherwise, a pattern has to be selected by changing variable 'blob_index' accordingly. For learning / recognizing multiple patterns, use demo script `pyrebel_main_learn_multiple.py` instead of `pyrebel_main_learn.py`.<br><br>
+The output is written to 'output_text.png'. To reset the knowledge base just delete file 'know_base.pkl' in the current working directory.<br>
 See how the program learns and recognizes patterns <a href="docs/sign.MD">here</a><br>
 
 # Docs <a href="https://github.com/ps-nithin/pyrebel/blob/main/docs/DOCS.md">here</a>
