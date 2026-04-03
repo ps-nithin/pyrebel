@@ -171,7 +171,7 @@ while 1:
         draw_image=Image.fromarray(img_scaled).convert('RGB')
         draw = ImageDraw.Draw(draw_image)
         text_color=(255,0,0)
-        font=ImageFont.truetype('DejaVuSans',30)
+        font=ImageFont.load_default(size=30)
         for i,blob_i in enumerate(blob_indices):
             if len(list(itertools.chain.from_iterable(recognized[0][i])))==0:
                 continue
