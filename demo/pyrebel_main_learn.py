@@ -120,7 +120,7 @@ while 1:
         ba_sign=abs.get_sign()
         ba_size=abs.get_abstract_size()
         # Find signatures for the layer    
-        is_finished=l.find_signatures2(ba_sign,ba_size)    
+        is_finished=l.find_signatures(ba_sign,ba_size)    
         if is_finished or is_finished_abs:
             break
             

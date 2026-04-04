@@ -150,7 +150,7 @@ while 1:
         ba_size=abs.get_abstract_size()
         
         # Find signatures for the layer    
-        is_finished=l.find_signatures2(ba_sign,ba_size)    
+        is_finished=l.find_signatures(ba_sign,ba_size)    
         if is_finished or is_finished_abs:
             ist=time.time()
             l.init_signatures()
@@ -159,7 +159,7 @@ while 1:
             
     print("found signatures in",time.time()-fst)
     
-    top_n=3
+    top_n=-1 # `top_n=-1` for symbol with most weight. `top_n=n` for top n symbols.
     if args.recognize:
         rt=time.time()
         recognized=l.recognize_sym(blob_indices,top_n,"image")

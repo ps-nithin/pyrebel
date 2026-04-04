@@ -21,7 +21,7 @@ from pyrebel.utils import *
 from pyrebel.getnonzeros import *
 
 @cuda.jit
-def find_signatures_cuda(ba_sign_d,nz_ba_size_d,nz_ba_size_cum_d,ba_sign_array_d):
+def find_signatures_cuda2(ba_sign_d,nz_ba_size_d,nz_ba_size_cum_d,ba_sign_array_d):
     ci=cuda.grid(1)
     if ci<len(nz_ba_size_d):
         #if nz_ba_size_d[ci]-1>layer_n:
@@ -72,7 +72,7 @@ def find_signatures_cuda(ba_sign_d,nz_ba_size_d,nz_ba_size_cum_d,ba_sign_array_d
                     n+=1
                 s+=1
 @cuda.jit
-def find_signatures_cuda2(ba_sign_d,nz_ba_size_d,nz_ba_size_cum_d,ba_sign_array_d,cur_layer):
+def find_signatures_cuda(ba_sign_d,nz_ba_size_d,nz_ba_size_cum_d,ba_sign_array_d,cur_layer):
     ci=cuda.grid(1)
     if ci<len(nz_ba_size_d):
         #if nz_ba_size_d[ci]-1>layer_n:
@@ -177,7 +177,7 @@ class Learn:
         #print(count_cum)
         #print(count_h)
     
-    def find_signatures2(self,ba_sign_h,nz_ba_size_h):
+    def find_signatures(self,ba_sign_h,nz_ba_size_h):
         if self.next_layer>self.layer_n:
             return 1
         nz_ba_size_cum_=np.cumsum(nz_ba_size_h)
@@ -186,24 +186,104 @@ class Learn:
         nz_ba_size_d=cuda.to_device(nz_ba_size_h)
         ba_sign_d=cuda.to_device(ba_sign_h)
         ba_sign_array2_d=cuda.to_device(self.ba_sign_array2_h)
-        find_signatures_cuda2[len(nz_ba_size_h),1](ba_sign_d,nz_ba_size_d,nz_ba_size_cum_d,ba_sign_array2_d,self.next_layer)
+        find_signatures_cuda[len(nz_ba_size_h),1](ba_sign_d,nz_ba_size_d,nz_ba_size_cum_d,ba_sign_array2_d,self.next_layer)
         cuda.synchronize()
         self.next_layer+=1
         self.ba_sign_array2_h=ba_sign_array2_d.copy_to_host()
         return 0
     
-    def find_signatures(self,ba_sign_h,nz_ba_size_h):
+    def find_signatures2(self,ba_sign_h,nz_ba_size_h):
         nz_ba_size_cum_=np.cumsum(nz_ba_size_h)
         nz_ba_size_cum=np.delete(np.insert(nz_ba_size_cum_,0,0),-1)
         nz_ba_size_cum_d=cuda.to_device(nz_ba_size_cum)
         nz_ba_size_d=cuda.to_device(nz_ba_size_h)
         ba_sign_d=cuda.to_device(ba_sign_h)
         ba_sign_array_d=cuda.to_device(self.ba_sign_array_h)
-        find_signatures_cuda[len(nz_ba_size_h),1](ba_sign_d,nz_ba_size_d,nz_ba_size_cum_d,ba_sign_array_d)
+        find_signatures_cuda2[len(nz_ba_size_h),1](ba_sign_d,nz_ba_size_d,nz_ba_size_cum_d,ba_sign_array_d)
         cuda.synchronize()
         self.ba_sign_array_h=ba_sign_array_d.copy_to_host()           
+
+    def learn_sym(self,blobs_i,sign_name,channel,memory=1):        
+        n=0
+        learned_signs=list()
+
+        if len(blobs_i)==0:
+            return [] 
+        elif len(blobs_i)==1:
+            print("Single blob.")
+            blobs_indices=blobs_i
+            for blob_i in range(len(blobs_indices)):
+                max_sign_len=0
+                for sign_i in range(self.count_cum[blobs_indices[blob_i]],self.count_cum[blobs_indices[blob_i]]+self.count_h[blobs_indices[blob_i]]):
+                    cur_sign=self.nz_ba_sign_array2_str_signs[sign_i]
+                    if len(cur_sign)==0:
+                        continue
+                    if cur_sign in self.know_base:
+                        if channel in self.know_base[cur_sign]:
+                            if sign_name in self.know_base[cur_sign][channel]:
+                                self.know_base[cur_sign][channel][sign_name]+=1
+                            else:
+                                self.know_base[cur_sign][channel][sign_name]=1
+                                learned_signs.append(cur_sign)
+                                n+=1 
+                        else:
+                            self.know_base[cur_sign][channel]={sign_name:1}
+                            learned_signs.append(cur_sign)
+                            n+=1 
+                    else:
+                        self.know_base[cur_sign]={channel:{sign_name:1}}
+                        learned_signs.append(cur_sign) 
+                        n+=1
+                    if len(cur_sign)>max_sign_len:
+                        max_sign_len=len(cur_sign)
+                        
+                if sign_name in self.know_base:
+                    if max_sign_len>self.know_base[sign_name]['max_len']:
+                        self.know_base[sign_name]['max_len']=max_sign_len
+                else:
+                    self.know_base[sign_name]={'max_len':max_sign_len}
+        else:
+            print("Multiple blobs.")
+            blobs_indices=blobs_i
+            recognized=list()
+            blob_i_counter=list()
+            for blob_i in range(len(blobs_indices)):
+                recognized=list()
+                blob_i_counter.append(list())
+                found_layer=np.zeros(self.layer_n,dtype=np.int32)
+                for sign_i in range(self.count_cum[blobs_indices[blob_i]],self.count_cum[blobs_indices[blob_i]]+self.count_h[blobs_indices[blob_i]]):
+                    cur_sign=self.nz_ba_sign_array2_str_signs[sign_i]
+                    if len(cur_sign)==0:
+                        continue
+                    if cur_sign in self.know_base:
+                        if channel in self.know_base[cur_sign]:
+                            if found_layer[len(cur_sign)-1]==0:
+                                symbol_recognized=self.know_base[cur_sign][channel].keys()
+                                recognized+=symbol_recognized
+                                found_layer[len(cur_sign)-1]+=1
+                blob_i_counter[blob_i]=Counter(recognized).most_common(memory)
+                
+            sym=list(itertools.chain(*blob_i_counter))
+            #sym.sort(key=lambda x: x[1],reverse=True)
+            #print(sym)
+            for s in sym:
+                if s[0] in self.know_base:
+                    if channel in self.know_base[s[0]]:
+                        if sign_name not in self.know_base[s[0]][channel]:
+                            self.know_base[s[0]][channel][sign_name]=s[1]
+                            learned_signs.append(s)  
+                    else:
+                        self.know_base[s[0]][channel]={sign_name:s[1]}
+                        learned_signs.append(s)                 
+                else:
+                    self.know_base[s[0]]={channel: {sign_name:s[1]}}
+                    learned_signs.append(s)
+            #learned_signs.sort(key=lambda x: x[1],reverse=True)
+            learned_signs=blob_i_counter
+        return learned_signs    
+
     
-    def learn_sym(self,blobs_i,sign_name,channel):        
+    def learn_sym2(self,blobs_i,sign_name,channel):        
         n=0
         learned_signs=list()
 
@@ -354,12 +434,117 @@ class Learn:
                 n+=1
         return learned_signs
     
-    def get_sign_array(self):
-        return self.ba_sign_array_h
     def get_sign_array2(self):
+        return self.ba_sign_array_h
+    def get_sign_array(self):
         return self.ba_sign_array2_h
-
-    def recognize_sym(self,blobs_i,top_n,channel):
+    
+    def recognize_sym(self,blobs_i,top_n,channel,memory=1):
+        recognized=list()
+        blob_i_counter=list()
+        blob_i_counter_new=list()
+        if len(blobs_i)==0:
+            blobs_indices=range(len(self.count_h))
+            
+        elif len(blobs_i)==1:
+            print("Single blob.")
+            blobs_indices=blobs_i
+            for blob_i in range(len(blobs_indices)):
+                recognized=list()
+                blob_i_counter.append(list())
+                found_layer=np.zeros(self.layer_n,dtype=np.int32)
+                max_sign_len=0
+                for sign_i in range(self.count_cum[blobs_indices[blob_i]],self.count_cum[blobs_indices[blob_i]]+self.count_h[blobs_indices[blob_i]]):
+                    cur_sign=self.nz_ba_sign_array2_str_signs[sign_i]
+                    if cur_sign in self.know_base:
+                        if channel in self.know_base[cur_sign]:
+                            if found_layer[len(cur_sign)-1]==0:
+                                symbol_recognized=self.know_base[cur_sign][channel].keys()
+                                recognized+=symbol_recognized
+                                found_layer[len(cur_sign)-1]+=1
+                                if len(cur_sign)>max_sign_len:
+                                    max_sign_len=len(cur_sign)
+                recognized_ordered=Counter(recognized).most_common()
+                
+                if top_n==-1:                      
+                    if len(recognized_ordered)==0:
+                        continue
+                    most_count=recognized_ordered[0][1]
+                    most_sym=recognized_ordered[0][0]
+                    weight_diff_min=np.inf
+                    for r in recognized_ordered:
+                        if r[1]!=most_count:
+                            break
+                        weight_diff=abs(max_sign_len-self.know_base[r[0]]['max_len'])
+                        if weight_diff<weight_diff_min:
+                            weight_diff_min=weight_diff
+                            most_sym=r[0]                  
+                            most_count=r[1]
+                    blob_i_counter[blob_i]=[(most_sym,most_count)]
+                else:
+                    blob_i_counter[blob_i]=recognized_ordered[:top_n]
+            sym2=blob_i_counter[0]
+            return [blob_i_counter,[sym2]]
+        else:
+            print("Multiple blobs.")        
+            blobs_indices=blobs_i
+            for blob_i in range(len(blobs_indices)):
+                recognized=list()
+                blob_i_counter.append(list())
+                blob_i_counter_new.append(list())
+                found_layer=np.zeros(self.layer_n,dtype=np.int32)  
+                max_sign_len=0
+                for sign_i in range(self.count_cum[blobs_indices[blob_i]],self.count_cum[blobs_indices[blob_i]]+self.count_h[blobs_indices[blob_i]]):
+                    cur_sign=self.nz_ba_sign_array2_str_signs[sign_i]
+                    if cur_sign in self.know_base:
+                        if channel in self.know_base[cur_sign]:
+                            if found_layer[len(cur_sign)-1]==0:
+                                symbol_recognized=self.know_base[cur_sign][channel].keys()
+                                recognized+=symbol_recognized
+                                found_layer[len(cur_sign)-1]+=1
+                                if len(cur_sign)>max_sign_len:
+                                    max_sign_len=len(cur_sign)
+                recognized_ordered=Counter(recognized).most_common()
+ 
+                if top_n==-1:
+                    if len(recognized_ordered)==0:
+                        continue
+                    most_count=recognized_ordered[0][1]
+                    most_sym=recognized_ordered[0][0]
+                    weight_diff_min=np.inf
+                    for r in recognized_ordered:
+                        if r[1]!=most_count:
+                            break
+                        weight_diff=abs(max_sign_len-self.know_base[r[0]]['max_len'])
+                        if weight_diff<weight_diff_min:
+                            weight_diff_min=weight_diff
+                            most_sym=r[0]                  
+                            most_count=r[1] 
+                    blob_i_counter[blob_i]=[(most_sym,most_count)]
+                else:
+                    blob_i_counter[blob_i]=recognized_ordered[:top_n]
+                blob_i_counter_new[blob_i]=Counter(recognized).most_common(memory)
+                
+            sym=list(itertools.chain(*blob_i_counter_new))            
+            #sym.sort(key=lambda x: x[1],reverse=True)
+            #print(sym)
+            recognized2=list()
+            multiple=0
+            for s in sym:
+                if len(s[0])>1:
+                    multiple+=1
+                if s[0] in self.know_base:
+                    if channel in self.know_base[s[0]]:
+                        sym_recognized=list(self.know_base[s[0]][channel].keys())*s[1]
+                        recognized2+=sym_recognized
+                    
+            if channel=="image" and multiple==0:
+                recognized2.append("".join(i[0] for i in sym))
+            sym2=Counter(recognized2).most_common(memory)        
+            return [blob_i_counter,[sym2]]
+    
+    
+    def recognize_sym2(self,blobs_i,top_n,channel):
         recognized=list()
         blob_i_counter=list()
         if len(blobs_i)==0:
@@ -401,8 +586,9 @@ class Learn:
                 if len(s[0])>1:
                     multiple+=1
                 if s[0] in self.know_base:
-                    sym_recognized=list(self.know_base[s[0]][channel].keys())*s[1]
-                    recognized2+=sym_recognized
+                    if channel in self.know_base[s[0]]:
+                        sym_recognized=list(self.know_base[s[0]][channel].keys())*s[1]
+                        recognized2+=sym_recognized
                     
             if channel=="image" and multiple==0:
                 recognized2.append("".join(i[0] for i in sym))
@@ -411,7 +597,7 @@ class Learn:
 
     def recognize_one(self,blob_i,top_n):
         recognized=list()
-        if len(self.ba_sign_array_h)>blob_i:
+        if len(self.ba_sign_array2_h)>blob_i:
             #print(self.ba_sign_array2_h[blob_i].shape)
             ba_sign_array2_blob_h=self.ba_sign_array2_h[blob_i].reshape((1,)+self.ba_sign_array2_h[blob_i].shape)
             ba_sign_array2_blob_d=cuda.to_device(ba_sign_array2_blob_h)
@@ -444,7 +630,7 @@ class Learn:
         
     def recognize2(self,blob_i,top_n):
         recognized=list()
-        if len(self.ba_sign_array_h)>blob_i:
+        if len(self.ba_sign_array2_h)>blob_i:
             #sign_sum=self.ba_sign_array_h.sum(axis=2)
             #sign_sum_blob=self.ba_sign_array_h[blob_i].sum(axis=1)
             #sign_sum_unique=np.unique(sign_sum,axis=1)
