@@ -18,7 +18,7 @@ Demo programs are located in 'demo/' directory.<br>
 Usage:<br>
 ```python3 pyrebel_main.py --input <filename.png>```<br>
 Optional arguments<br>
-```--abs_threshold <value>``` Selects the threshold of abstraction. (Defaults to 5)<br><br>
+```--abs_threshold <value>``` Selects the threshold of abstraction. (Defaults to -1, which sets per blob threshold based on the size of the blob.)<br><br>
 For example,<br>
 ```python3 pyrebel_main.py --input images/abc.png --abs_threshold 10```<br>
 The output is written to 'output.png'<br><br>
@@ -75,7 +75,7 @@ This is a demo of pattern recognition achieved using data abstraction.<br>
    ```python3 pyrebel_main_learn_multiple.py --recognize images/recognize.png``` displays the symbols recognized in the file 'images/recognize.png'.<br><br>
 
 Optional arguments,
-   1. ```--abs_threshold <value>``` Selects the threshold of abstraction. (Defaults to 5)<br>
+   1. ```--abs_threshold <value>``` Selects the threshold of abstraction. (Defaults to -1, which sets per blob threshold based on the size of the blob.)<br>
    
 The output is written to 'output_text.png'. To reset the knowledge base just delete file 'know_base.pkl' in the current working directory.<br>
 See how the program learns and recognizes patterns <a href="docs/sign.MD">here</a><br>
