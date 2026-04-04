@@ -36,7 +36,7 @@ args=parser.parse_args()
 if args.abs_threshold:
     abs_threshold=int(args.abs_threshold)
 else:
-    abs_threshold=5
+    abs_threshold=-1
 
 if args.learn:
     learn_n=0
@@ -87,6 +87,12 @@ while 1:
     bound_seed=pre.get_bound_seed()
     bound_seed_d=cuda.to_device(bound_seed)
     
+    # Assign threshold of abstraction
+    if abs_threshold==-1:
+        threshold_h=pre.get_max_dist()*0.05
+    else:
+        threshold_h=np.full(len(bound_size),abs_threshold,dtype=np.float64)
+    
     print("len(bound_data)=",len(bound_data))
     print("len(bound_size)=",len(bound_size))
     scaled_shape=pre.get_image_scaled().shape
@@ -136,7 +142,7 @@ while 1:
     
     
     # Initialize the abstraction class
-    abs=Abstract(bound_data,len(bound_size),init_bound_abstract,scaled_shape,True)
+    abs=Abstract(bound_data,len(bound_size),init_bound_abstract,scaled_shape,True,threshold_h)
     
     n_layers=30
     # Initialize learning class
@@ -145,7 +151,7 @@ while 1:
     fst=time.time()
     while 1:
         # Do one layer of abstraction
-        is_finished_abs=abs.do_abstract_one(abs_threshold)
+        is_finished_abs=abs.do_abstract_one()
         ba_sign=abs.get_sign()
         ba_size=abs.get_abstract_size()
         

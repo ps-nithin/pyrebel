@@ -220,7 +220,7 @@ def get_dist_data_init(bound_data_d,tmp_img,dist_data_d):
         dist_data_d[ci][1]=max_r*tmp_img.shape[1]+max_c
         
 @cuda.jit
-def get_max_dist(nz_s_cum_d,nz_s_d,bound_data_d,dist_data_d,max_dist_d):
+def get_max_dist(nz_s_cum_d,nz_s_d,bound_data_d,dist_data_d,max_dist_d,max_dist_val_d):
     """Finds a pair of pixels which are farthest to each other in a boundary."""
     
     ci=cuda.grid(1)
@@ -237,7 +237,7 @@ def get_max_dist(nz_s_cum_d,nz_s_d,bound_data_d,dist_data_d,max_dist_d):
             if s==nz_s_d[ci]:
                 break
             n+=1
-
+        max_dist_val_d[ci]=d_max
         max_dist_d[ci][0]=bound_data_d[d_max_i]
         max_dist_d[ci][1]=int(dist_data_d[d_max_i][1])
    
@@ -434,8 +434,9 @@ class Preprocess:
         get_dist_data_init[math.ceil(nz_s_cum_[-1]/256),256](bound_data_d,img_boundary_d,dist_data_d)
         cuda.synchronize()
         
+        max_dist_val_d=cuda.to_device(np.zeros(len(self.nz_s),dtype=np.float64))      
         max_dist_d=cuda.device_array([len(self.nz_s),2],dtype=np.int32)
-        get_max_dist[math.ceil(len(self.nz_s)/1),1](nz_s_cum_d,nz_s_d,bound_data_d,dist_data_d,max_dist_d)
+        get_max_dist[math.ceil(len(self.nz_s)/1),1](nz_s_cum_d,nz_s_d,bound_data_d,dist_data_d,max_dist_d,max_dist_val_d)
         cuda.synchronize()
 
         bound_data_ordered_d=cuda.device_array([nz_si_cum_[-1]],dtype=np.int32)
@@ -451,6 +452,7 @@ class Preprocess:
         self.bound_data_ordered_h=bound_data_ordered_d.copy_to_host()
         self.bound_abstract_h=bound_abstract_d.copy_to_host()
         self.bound_mark_h=bound_mark_d.copy_to_host()    
+        self.max_dist_val_h=max_dist_val_d.copy_to_host()
         
     def set_bound_size(self,min_size=False,max_size=False):
         """Sets the minimum and maximum threshold of boundary size."""
@@ -462,6 +464,10 @@ class Preprocess:
     def get_bound_size(self):
         """Returns the size of each boundary."""
         return self.nz_s
+    
+    def get_max_dist(self):
+        """Returns the diagonal distance of each boundary."""
+        return self.max_dist_val_h
         
     def get_bound_seed(self):
         """Returns the seed pixel of each boundary."""

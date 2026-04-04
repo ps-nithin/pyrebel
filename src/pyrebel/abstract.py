@@ -61,7 +61,7 @@ def find_ba_max_pd(nz_ba_d,nz_ba_size_d,bound_data_ordered_d,ba_max_pd_d,scaled_
         """
 
 @cuda.jit
-def find_next_ba(ba_max_pd_d,nz_ba_size_d,nz_ba_size_cum_d,bound_abstract_d,ba_threshold,pd):
+def find_next_ba(ba_max_pd_d,nz_ba_size_d,nz_ba_size_cum_d,bound_abstract_d,threshold_d,pd):
     """Finds one abstract pixel per boundary / blob."""
     
     ci=cuda.grid(1)
@@ -79,13 +79,13 @@ def find_next_ba(ba_max_pd_d,nz_ba_size_d,nz_ba_size_cum_d,bound_abstract_d,ba_t
             s+=1
             n+=1
         cuda.syncthreads()
-        if d_max>ba_threshold:
+        if d_max>threshold_d[ci]:
             bound_abstract_d[d_max_i-1]=d_max_i
             nz_ba_size_d[ci]+=1
             pd[0]=d_max
 
 @cuda.jit
-def find_next_ba_all(ba_max_pd_d,nz_ba_size_d,nz_ba_size_cum_d,bound_abstract_d,ba_threshold):
+def find_next_ba_all(ba_max_pd_d,nz_ba_size_d,nz_ba_size_cum_d,bound_abstract_d,threshold_d):
     """Finds one abstract pixel for each abstract segment in a boundary / blob."""
     
     ci=cuda.grid(1)
@@ -96,7 +96,7 @@ def find_next_ba_all(ba_max_pd_d,nz_ba_size_d,nz_ba_size_cum_d,bound_abstract_d,
         #d_max=0.0
         #d_max_i=n
         while 1:
-            if ba_max_pd_d[n][0]>ba_threshold:
+            if ba_max_pd_d[n][0]>threshold_d[ci]:
                 #d_max=ba_max_pd_d[n][0]
                 d_max_i=int(ba_max_pd_d[n][1])
                 bound_abstract_d[d_max_i-1]=d_max_i
@@ -175,12 +175,13 @@ def angle_diff(a,b):
 
 
 class Abstract:
-    def __init__(self,bound_data_ordered_h,n_bounds,bound_abstract_h,shape_h,is_closed):
+    def __init__(self,bound_data_ordered_h,n_bounds,bound_abstract_h,shape_h,is_closed,threshold_h=-1):
         # Inputs
-        self.bound_data_ordered_h=bound_data_ordered_h
+        self.bound_data_ordered_d=cuda.to_device(bound_data_ordered_h)
         self.n_bounds=n_bounds
         self.init_bound_abstract_h=bound_abstract_h
         self.bound_abstract_h=bound_abstract_h
+        self.threshold_h=threshold_h
         self.shape_h=shape_h
         self.is_closed=is_closed
         self.pd=np.full(1,np.inf,dtype=np.float32)
@@ -195,10 +196,18 @@ class Abstract:
         self.nz_ba=get_non_zeros(bound_abstract_h)
         self.ba_sign=[]
         
-    def do_abstract_all(self,ba_threshold):
+    def do_abstract_all(self,ba_threshold=-1):
         """Finds all layers of abstraction."""
         
-        bound_data_ordered_d=cuda.to_device(self.bound_data_ordered_h)
+        if isinstance(self.threshold_h,int):
+            if ba_threshold==-1:
+                print("Invalid threshold.")
+                return
+            else:
+                threshold_d=cuda.to_device(np.full(self.n_bounds,ba_threshold,dtype=np.float64))
+        else:
+            threshold_d=cuda.to_device(self.threshold_h)
+            
         bound_abstract_d=cuda.to_device(self.bound_abstract_h)
         shape_d=cuda.to_device(self.shape_h)
         nz_ba=get_non_zeros(self.bound_abstract_h)
@@ -215,9 +224,9 @@ class Abstract:
         ba_size_cum_old=ba_size_cum_[-1]
 
         while 1:
-            find_ba_max_pd[math.ceil(len(nz_ba)/32),32](nz_ba_d,ba_size_d,bound_data_ordered_d,ba_max_pd_d,shape_d)
+            find_ba_max_pd[math.ceil(len(nz_ba)/32),32](nz_ba_d,ba_size_d,self.bound_data_ordered_d,ba_max_pd_d,shape_d)
             cuda.synchronize()
-            find_next_ba_all[math.ceil(len(self.ba_size)/32),32](ba_max_pd_d,ba_size_d,ba_size_cum_d,bound_abstract_d,ba_threshold)
+            find_next_ba_all[math.ceil(len(self.ba_size)/32),32](ba_max_pd_d,ba_size_d,ba_size_cum_d,bound_abstract_d,threshold_d)
             cuda.synchronize()
 
 
@@ -238,7 +247,7 @@ class Abstract:
                 ba_change_d=cuda.to_device(ba_change)
                 ba_sign=np.zeros([len(nz_ba)],dtype=np.int32)
                 ba_sign_d=cuda.to_device(ba_sign)
-                find_change[math.ceil(len(nz_ba)/32),32](ba_size_d,ba_size_cum_d,nz_ba_d,bound_data_ordered_d,shape_d,ba_change_d,ba_sign_d)
+                find_change[math.ceil(len(nz_ba)/32),32](ba_size_d,ba_size_cum_d,nz_ba_d,self.bound_data_ordered_d,shape_d,ba_change_d,ba_sign_d)
                 cuda.synchronize()
                 ba_change_h=ba_change_d.copy_to_host()
                 ba_sign_h=ba_sign_d.copy_to_host()
@@ -253,11 +262,18 @@ class Abstract:
         self.ba_sign_h=ba_sign_h
         self.bound_abstract_h=bound_abstract_h
         
-    def do_abstract_one(self,ba_threshold):
-        """Finds one layer of abstraction."""
-        
+    def do_abstract_one(self,ba_threshold=-1):
+        """Finds one layer of abstraction."""        
+        if isinstance(self.threshold_h,int):
+            if ba_threshold==-1:
+                print("Invalid threshold.")
+                return
+            else:
+                threshold_d=cuda.to_device(np.full(self.n_bounds,ba_threshold,dtype=np.float64))
+        else:
+            threshold_d=cuda.to_device(self.threshold_h)
+            
         is_final=False
-        bound_data_ordered_d=cuda.to_device(self.bound_data_ordered_h)
         bound_abstract_d=cuda.to_device(self.bound_abstract_h)
         shape_d=cuda.to_device(self.shape_h)
         nz_ba=get_non_zeros(self.bound_abstract_h)
@@ -274,9 +290,9 @@ class Abstract:
         pd=np.zeros(1,dtype=np.float32)
         pd_d=cuda.to_device(pd)
         while 1:
-            find_ba_max_pd[math.ceil(len(nz_ba)/32),32](nz_ba_d,ba_size_d,bound_data_ordered_d,ba_max_pd_d,shape_d)
+            find_ba_max_pd[math.ceil(len(nz_ba)/32),32](nz_ba_d,ba_size_d,self.bound_data_ordered_d,ba_max_pd_d,shape_d)
             cuda.synchronize()
-            find_next_ba[math.ceil(len(self.ba_size)/32),32](ba_max_pd_d,ba_size_d,ba_size_cum_d,bound_abstract_d,ba_threshold,pd_d)
+            find_next_ba[math.ceil(len(self.ba_size)/32),32](ba_max_pd_d,ba_size_d,ba_size_cum_d,bound_abstract_d,threshold_d,pd_d)
             cuda.synchronize()
 
             bound_abstract_h=bound_abstract_d.copy_to_host()
@@ -300,7 +316,7 @@ class Abstract:
             ba_change_d=cuda.to_device(ba_change)
             ba_sign=np.zeros([len(nz_ba)],dtype=np.int32)
             ba_sign_d=cuda.to_device(ba_sign)
-            find_change[math.ceil(len(nz_ba)/32),32](ba_size_d,ba_size_cum_d,nz_ba_d,bound_data_ordered_d,shape_d,ba_change_d,ba_sign_d)
+            find_change[math.ceil(len(nz_ba)/32),32](ba_size_d,ba_size_cum_d,nz_ba_d,self.bound_data_ordered_d,shape_d,ba_change_d,ba_sign_d)
             cuda.synchronize()
             ba_change_h=ba_change_d.copy_to_host()
             ba_sign_h=ba_sign_d.copy_to_host()

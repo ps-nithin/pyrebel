@@ -33,7 +33,7 @@ args=parser.parse_args()
 if args.abs_threshold:
     abs_threshold=int(args.abs_threshold)
 else:
-    abs_threshold=5
+    abs_threshold=-1
         
 while 1:
     start_time=time.time()    
@@ -64,6 +64,12 @@ while 1:
     bound_size=pre.get_bound_size()
     print("len(bound_data)=",len(bound_data))
     
+    # Assign threshold of abstraction
+    if abs_threshold==-1:
+        threshold_h=pre.get_max_dist()*0.05
+    else:
+        threshold_h=np.full(len(bound_size),abs_threshold,dtype=np.float64)
+        
     shape_d=cuda.to_device(img_array.shape)
     scaled_shape=[img_array.shape[0]*3,img_array.shape[1]*3]
     scaled_shape_d=cuda.to_device(scaled_shape)
@@ -75,10 +81,10 @@ while 1:
     cuda.synchronize()
     
     # Initialize the abstraction class
-    abs=Abstract(bound_data,len(bound_size),init_bound_abstract,scaled_shape,True)
+    abs=Abstract(bound_data,len(bound_size),init_bound_abstract,scaled_shape,True,threshold_h)
     
     # Get the abstract points
-    abs.do_abstract_all(abs_threshold)
+    abs.do_abstract_all()
     abs_points=abs.get_abstract()
     abs_size=abs.get_abstract_size()
     abs_size_d=cuda.to_device(abs_size)
