@@ -10,5 +10,5 @@ The dark edges are joined with neighboring dark edges without intersecting with 
 
 For eq. running the below code gives a smooth edge as shown in the below image.<br>
 
-```python3 pyrebel_main_edge_join.py --input images/lotus.jpg --edge_threshold 10```<br><br>
+```python3 pyrebel_main_edge_join.py --input images/lotus.jpg --edge_threshold 10 --scale_factor 3```<br><br>
 <img src='https://github.com/ps-nithin/pyrebel/raw/b35c4dd590692e6bb67602f9a7427674ac4e0617/images/output_merge.png'></img><br>
