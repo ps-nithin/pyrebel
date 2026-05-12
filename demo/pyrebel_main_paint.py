@@ -55,7 +55,7 @@ while 1:
     img_array_rgb_d=cuda.to_device(img_array_rgb)
     edge=Edge(img_array)
     edge.find_edges(edge_threshold)
-    edges=edge.get_edges_one(0)
+    edges=edge.get_edges_one(1) # or edge.get_edges_one(0)
     edges_img_d=cuda.to_device(edges)    
     block_img=np.zeros(img_array_rgb.shape,dtype=np.uint8)
     block_img_d=cuda.to_device(block_img)
