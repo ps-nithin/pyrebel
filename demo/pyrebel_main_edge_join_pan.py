@@ -13,20 +13,21 @@
 # If not, see <https://www.gnu.org/licenses/>.
 #
 
-# This is a demo of using edge detection to form smooth and continuous patterns which
-# can be later used for pattern recognition.
+# This demo is similar to `pyrebel_main_edge_join.py` but here it crops the input image
+# at user defined positions and scales it to a fixed size of `OUTPUT_RESOLUTION`, which 
+# is then used to find smooth and continuous edges.
 #
 
 import numpy as np
 from numba import cuda
 from PIL import Image
 import argparse,time,math
+from pynput import keyboard
 from pyrebel.preprocess import Preprocess
 from pyrebel.abstract import Abstract
 from pyrebel.edge import Edge
 from pyrebel.learn import Learn
 from pyrebel.utils import *
-
 
 def paint_edges(img_array_rgb,edges,block_threshold,paint_threshold):
     img_array_rgb_d=cuda.to_device(img_array_rgb)
@@ -125,18 +126,26 @@ def join_edges(edges_d,out_image_d,threshold,color):
                             err+=dx
                             rr+=sy
 
-def crop_center(img, crop_width, crop_height):
+def crop_center(img, crop_width, crop_height, pos_r, pos_c):
     """
-    Crops the center of an image to the specified width and height.
+    Crops image to the specified width and height at the specified positon.
     """
     width, height = img.size
-
-    # Calculate coordinates for the center crop
-    left = (width - crop_width) // 2
-    top = (height - crop_height) // 2
-    right = left + crop_width
-    bottom = top + crop_height
-
+    #print(pos_r,pos_c)
+    left=0 if (pos_c-crop_width//2)<0 else pos_c-crop_width//2
+    top=0 if (pos_r-crop_height//2)<0 else pos_r-crop_height//2    
+    if (left+crop_width)>width:
+        right=width
+        left=width-crop_width
+    else:
+        right=left+crop_width
+    if (top+crop_height)>height:
+        bottom=height
+        top=bottom-crop_height
+    else:
+        bottom=top+crop_height
+    #print(left,top,right,bottom)
+    
     # Crop the image
     cropped_img = img.crop((left, top, right, bottom))
     return cropped_img
@@ -148,6 +157,10 @@ parser.add_argument("-et","--edge_threshold",help="Threshold of edge detection."
 parser.add_argument("-b","--block_threshold",help="Block threshold.")
 parser.add_argument("-p","--paint_threshold",help="Paint threshold.")
 parser.add_argument("-s","--scale_factor",help="Scaling factor.")
+parser.add_argument("-cw","--crop_width",help="Crop width.")
+parser.add_argument("-cr","--crop_r",help="Crop position from top.")
+parser.add_argument("-cc","--crop_c",help="Crop position from left.")
+parser.add_argument("-or","--output_resolution",help="Output resolution.")
 args=parser.parse_args()
 
 
@@ -166,12 +179,30 @@ else:
 if args.scale_factor:
     scale_factor=int(args.scale_factor)
 else:
-    scale_factor=1
-    
+    scale_factor=2
+if args.crop_width:
+    crop_width=int(args.crop_width)
+else:
+    crop_width=-1
+if args.crop_r:
+    crop_r=int(args.crop_r)
+else:
+    crop_r=1.5
+if args.crop_c:
+    crop_c=int(args.crop_c)
+else:
+    crop_c=1.5
+if args.output_resolution:
+    OUTPUT_RESOLUTION=int(args.output_resolution)
+else:
+    OUTPUT_RESOLUTION=600
+
+            
 def process_image(img_array_rgb_orig):
     start_time=time.time()
     img_array=np.array(Image.fromarray(img_array_rgb_orig).convert('L'))
-    img_array_rgb_orig_d=cuda.to_device(img_array_rgb_orig)
+    img_array_d=cuda.to_device(img_array)
+    img_array_rgb_orig_d=cuda.to_device(img_array_rgb_orig)        
     
     edge1=Edge(img_array)
     edge1.find_edges(edge_threshold)
@@ -201,16 +232,17 @@ def process_image(img_array_rgb_orig):
 
     edges_joined=out_image2_d.copy_to_host()
     
+    output_color=100
     edges_single=np.zeros(img_array.shape,dtype=np.uint8)
     edges_single_d=cuda.to_device(edges_single)
-    clone_image[blockspergrid,threadsperblock](out_image2_d,edges_single_d,100)
+    clone_image[blockspergrid,threadsperblock](out_image2_d,edges_single_d,output_color)
     cuda.synchronize()
     edges_single_h=edges_single_d.copy_to_host()
     
     edges_rgb_d=cuda.to_device(np.full(img_array_rgb_orig.shape,0,dtype=np.uint8))
     #clone_image_rgb[blockspergrid,threadsperblock](img_array_rgb_orig_d,out_image2_d,edges_rgb_d,255)
     #cuda.synchronize()
-    clone_image_rgb[blockspergrid,threadsperblock](img_array_rgb_orig_d,out_image2_d,edges_rgb_d,100)
+    clone_image_rgb[blockspergrid,threadsperblock](img_array_rgb_orig_d,out_image2_d,edges_rgb_d,output_color)
     cuda.synchronize()
 
     edges_rgb_h=edges_rgb_d.copy_to_host()
@@ -221,14 +253,31 @@ def process_image(img_array_rgb_orig):
     Image.fromarray(edges_joined).convert('RGB').save("output_joined.png")
     Image.fromarray(edges_single_h).convert('RGB').save("output.png")
     Image.fromarray(edges1).convert('RGB').save("edges.png")
+    Image.fromarray(img_array_rgb_orig).convert('RGB').save("frame.png")
     print("Finished in",time.time()-start_time,"seconds at",float(1/(time.time()-start_time)),"fps.")  
 
 def process_input():
+    img_array_rgb=np.array(Image.open(args.input).convert('RGB'))
+    global img_height
+    global img_width
+    global scale_factor
+    global crop_r,crop_c
+    img_height=img_array_rgb.shape[0]
+    img_width=img_array_rgb.shape[1]
+    if crop_r==1.5:
+        crop_r=img_height//2
+    if crop_c==1.5:
+        crop_c=img_width//2    
     while 1:
-        img_array_rgb=np.array(Image.open(args.input).convert('RGB'))
-        img_array_scaled=scale_camera_frame(img_array_rgb,scale_factor)
+        crop_width=OUTPUT_RESOLUTION//scale_factor
+        if OUTPUT_RESOLUTION>img_width or OUTPUT_RESOLUTION>img_width:
+            crop_width=-1
+            crop_r=-1
+            crop_c=-1
+        print("crop_width=",crop_width)
+        img_array_scaled=crop_and_scale_frame(img_array_rgb,scale_factor,crop_width,crop_r,crop_c)
         process_image(img_array_scaled)  
-        break
+        
     
 def process_camera_jutils():
     from jetson_utils import videoSource, videoOutput, Log
@@ -240,7 +289,7 @@ def process_camera_jutils():
         cudaConvertColor(img,converted_img)
         return converted_img
 
-    input_capture = videoSource("csi://0", options={'width':1920,'height':1080,'framerate':30,'flipMethod':'rotate-360'})
+    input_capture = videoSource("csi://0", options={'width':640,'height':640,'framerate':30,'flipMethod':'rotate-360'})
     #output = videoOutput("", argv=sys.argv)
     while 1:
         input_capture.Capture()
@@ -250,19 +299,28 @@ def process_camera_jutils():
             continue  
         img_rgb=cudaToNumpy(img_array_rgb)
         cudaDeviceSynchronize()
-        img_array_scaled=scale_camera_frame(img_rgb,scale_factor)
+        img_array_scaled=crop_and_scale_frame(img_rgb,scale_factor,crop_width,crop_r,crop_c)
         process_image(img_array_scaled)  
         
-def scale_camera_frame(img_array_rgb_orig,scale_factor=1,crop_width=-1):
+def crop_and_scale_frame(img_array_rgb_orig,scale_factor=1,crop_width=-1,crop_r=-1,crop_c=-1):
     #scale_factor=int(2048/max(img_array_rgb_orig.shape))
     print("scale=",scale_factor)
     if crop_width==-1:
-        crop_width=img_array_rgb_orig.shape[1]
-        crop_height=img_array_rgb_orig.shape[0]
+        crop_width_=img_array_rgb_orig.shape[1]
+        crop_height_=img_array_rgb_orig.shape[0]        
     else:
-        crop_height=crop_width
+        crop_height_=crop_width
+        crop_width_=crop_width
+    if crop_r==-1:
+        crop_r_=img_array_rgb_orig.shape[0]//2
+    else:
+        crop_r_=crop_r
+    if crop_c==-1:
+        crop_c_=img_array_rgb_orig.shape[1]//2
+    else:
+        crop_c_=crop_c
     #img_array_i=crop_center(Image.fromarray(img_array_rgb_orig).convert('L'),crop_width,crop_height)
-    img_array_rgb_i=crop_center(Image.fromarray(img_array_rgb_orig),crop_width,crop_height)
+    img_array_rgb_i=crop_center(Image.fromarray(img_array_rgb_orig),crop_width_,crop_height_,crop_r_,crop_c_)
     
     #img_array=np.array(img_array_i.resize((int(img_array_rgb_i.width*scale_factor),int(img_array_rgb_i.height*scale_factor)),Image.LANCZOS))
     img_array_rgb=np.array(img_array_rgb_i.resize((int(img_array_rgb_i.width*scale_factor),int(img_array_rgb_i.height*scale_factor)),Image.BICUBIC))
@@ -286,11 +344,11 @@ def process_camera_gst():
         "appsink name=sink emit-signals=true max-buffers=1 drop=true"
         ])
         
-    # GStreamer pipeline string for USB camera
+    # GStreamer pipeline string for USB camera    
     usb_pipeline=" ! ".join([
         "v4l2src device=/dev/video0",
         "videoconvert",
-        "video/x-raw, format=(string)RGB",
+        "video/x-raw, format=(string)RGB", # Add `videoflip method=rotate-180` to rotate camera.
         "appsink name=sink emit-signals=true max-buffers=1 drop=true"
         ])
         
@@ -309,7 +367,7 @@ def process_camera_gst():
             caps = sample.get_caps()
             width = caps.get_structure(0).get_value("width")
             height = caps.get_structure(0).get_value("height")
-
+            
             # Map buffer to numpy array
             success, map_info = buffer.map(Gst.MapFlags.READ)
             if success:
@@ -317,7 +375,23 @@ def process_camera_gst():
                 frame = frame_data.reshape((height, width, 3))  # BGR format
                 buffer.unmap(map_info)            
                 Image.fromarray(frame).convert('RGB').save("camera.png")
-                frame_scaled=scale_camera_frame(frame,scale_factor)
+                global img_width
+                global img_height
+                global scale_factor
+                global crop_r,crop_c
+                img_width=width
+                img_height=height
+                if crop_r==1.5:
+                    crop_r=img_height//2
+                if crop_c==1.5:
+                    crop_c=img_width//2
+                crop_width=OUTPUT_RESOLUTION//scale_factor
+                if OUTPUT_RESOLUTION>img_width or OUTPUT_RESOLUTION>img_width:
+                    crop_width=-1
+                    crop_r=-1
+                    crop_c=-1
+                print("crop_width=",crop_width)
+                frame_scaled=crop_and_scale_frame(frame,scale_factor,crop_width,crop_r,crop_c)
                 process_image(frame_scaled)                
                 # Now `frame` is a NumPy array (height, width, 3)
                 #print(f"Captured frame: {frame.shape}")
@@ -328,11 +402,63 @@ def process_camera_gst():
     pipeline.set_state(Gst.State.NULL)
     print("Pipeline stopped.")
 
+img_width=-1
+img_height=-1
+
 def main():
+    listener = keyboard.Listener(on_press=on_press)
+    listener.start()
+        
     if args.camera:
         process_camera_gst()
     elif args.input:
         process_input()
-        
+
+def on_press(key):
+    global scale_factor
+    global crop_r,crop_c
+    global edge_threshold
+    
+    # `up arrow` key moves the crop position up.
+    if key==keyboard.Key.up:
+        if crop_r>0:
+            crop_r-=20
+            
+    # `down arrow` key moves the crop position down.            
+    if key==keyboard.Key.down:
+        if crop_r<img_height:
+            crop_r+=20
+            
+    # `left arrow` key moves the crop position left.            
+    if key==keyboard.Key.left:
+        if crop_c>0:
+            crop_c-=20
+            
+    # `right arrow` key moves the crop position right.            
+    if key==keyboard.Key.right:
+        if crop_c<img_width:
+            crop_c+=20    
+            
+    # `+` Plus key zooms in the crop
+    if key==keyboard.KeyCode.from_char('+'):
+        if scale_factor<12:
+            scale_factor+=1
+            
+    # `-` Plus key zooms out the crop            
+    if key==keyboard.KeyCode.from_char('-'):
+        if scale_factor>1:
+            scale_factor-=1
+    
+    # `t` Lowercase t increases `edge_threshold`
+    if key==keyboard.KeyCode.from_char('t'):
+        if edge_threshold<100:
+            edge_threshold+=5
+    
+    # `T` Uppercase T decreases `edge_threshold`
+    if key==keyboard.KeyCode.from_char('T'):
+        if edge_threshold>10:
+            edge_threshold-=5
+    print("crop_r",crop_r,"crop_c",crop_c,"scale_factor",scale_factor,"edge_threshold",edge_threshold)
+                
 if __name__ == '__main__':
     main()
