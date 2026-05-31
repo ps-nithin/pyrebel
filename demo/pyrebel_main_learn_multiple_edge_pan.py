@@ -13,6 +13,12 @@
 # If not, see <https://www.gnu.org/licenses/>.
 #
 
+# This is a demo of learning and recognizing of patterns using abstraction of data. 
+# The demo is similar to `pyrebel_main_learn_multiple.py` but uses edge detection to obtain patterns.
+# Thus, it works with any images like a USB, CSI camera or an image file. The program settings can be changed using
+# keyboard shortcuts as defined in `on_press()`.
+# 
+
 import numpy as np
 from PIL import Image,ImageDraw,ImageFont
 import math,argparse,time,os,itertools
@@ -22,12 +28,6 @@ from pyrebel.abstract import Abstract
 from pyrebel.learn import Learn
 from pyrebel.edge import Edge
 from pyrebel.utils import *
-
-# This is a demo of learning and recognizing of patterns using abstraction of data. 
-# The demo is similar to `pyrebel_main_learn_multiple.py` but uses edge detection to obtain patterns.
-# Thus, it works with any images like a USB, CSI camera or an image file. The program settings can be changed using
-# keyboard shortcuts as defined in `on_press()`.
-# 
 
 parser=argparse.ArgumentParser()
 parser.add_argument("-t","--abs_threshold",help="Threshold of abstraction.")
