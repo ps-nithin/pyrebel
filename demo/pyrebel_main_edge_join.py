@@ -228,30 +228,7 @@ def process_input():
         img_array_rgb=np.array(Image.open(args.input).convert('RGB'))
         img_array_scaled=scale_camera_frame(img_array_rgb,scale_factor)
         process_image(img_array_scaled)  
-        break
-    
-def process_camera_jutils():
-    from jetson_utils import videoSource, videoOutput, Log
-    from jetson_utils import cudaAllocMapped,cudaConvertColor
-    from jetson_utils import cudaToNumpy,cudaDeviceSynchronize,cudaFromNumpy
-    def convert_color(img,output_format):
-        converted_img=cudaAllocMapped(width=img.width,height=img.height,
-                format=output_format)
-        cudaConvertColor(img,converted_img)
-        return converted_img
-
-    input_capture = videoSource("csi://0", options={'width':1920,'height':1080,'framerate':30,'flipMethod':'rotate-360'})
-    #output = videoOutput("", argv=sys.argv)
-    while 1:
-        input_capture.Capture()
-        img_array_rgb = input_capture.Capture()
-        if img_array_rgb is None: # timeout
-            print("No camera capture!")
-            continue  
-        img_rgb=cudaToNumpy(img_array_rgb)
-        cudaDeviceSynchronize()
-        img_array_scaled=scale_camera_frame(img_rgb,scale_factor)
-        process_image(img_array_scaled)  
+        break 
         
 def scale_camera_frame(img_array_rgb_orig,scale_factor=1,crop_width=-1):
     #scale_factor=int(2048/max(img_array_rgb_orig.shape))
@@ -278,7 +255,7 @@ def process_camera_gst():
     # GStreamer pipeline string for CSI camera
     csi_pipeline=" ! ".join([
         "nvarguscamerasrc sensor-id=0",  # Adjust sensor-id if multiple cameras
-        "video/x-raw(memory:NVMM), width=(int)640, height=(int)640, format=(string)NV12, framerate=(fraction)30/1",
+        "video/x-raw(memory:NVMM), width=(int)1920, height=(int)1080, format=(string)NV12, framerate=(fraction)30/1",
         "nvvidconv",
         "video/x-raw, format=(string)BGRx",
         "videoconvert",
@@ -288,7 +265,7 @@ def process_camera_gst():
         
     # GStreamer pipeline string for USB camera
     usb_pipeline=" ! ".join([
-        "v4l2src device=/dev/video0",
+        "v4l2src device=/dev/video0 ! video/x-raw, width=1920,height=1080",
         "videoconvert",
         "video/x-raw, format=(string)RGB",
         "appsink name=sink emit-signals=true max-buffers=1 drop=true"
@@ -303,7 +280,7 @@ def process_camera_gst():
 
     # Main loop
     while 1:
-        sample = appsink.emit("try-pull-sample", 100*Gst.MSECOND)
+        sample = appsink.emit("try-pull-sample", 1000*Gst.MSECOND)
         if sample:
             buffer = sample.get_buffer()
             caps = sample.get_caps()

@@ -278,30 +278,6 @@ def process_input():
         img_array_scaled=crop_and_scale_frame(img_array_rgb,scale_factor,crop_width,crop_r,crop_c)
         process_image(img_array_scaled)  
         
-    
-def process_camera_jutils():
-    from jetson_utils import videoSource, videoOutput, Log
-    from jetson_utils import cudaAllocMapped,cudaConvertColor
-    from jetson_utils import cudaToNumpy,cudaDeviceSynchronize,cudaFromNumpy
-    def convert_color(img,output_format):
-        converted_img=cudaAllocMapped(width=img.width,height=img.height,
-                format=output_format)
-        cudaConvertColor(img,converted_img)
-        return converted_img
-
-    input_capture = videoSource("csi://0", options={'width':640,'height':640,'framerate':30,'flipMethod':'rotate-360'})
-    #output = videoOutput("", argv=sys.argv)
-    while 1:
-        input_capture.Capture()
-        img_array_rgb = input_capture.Capture()
-        if img_array_rgb is None: # timeout
-            print("No camera capture!")
-            continue  
-        img_rgb=cudaToNumpy(img_array_rgb)
-        cudaDeviceSynchronize()
-        img_array_scaled=crop_and_scale_frame(img_rgb,scale_factor,crop_width,crop_r,crop_c)
-        process_image(img_array_scaled)  
-        
 def crop_and_scale_frame(img_array_rgb_orig,scale_factor=1,crop_width=-1,crop_r=-1,crop_c=-1):
     #scale_factor=int(2048/max(img_array_rgb_orig.shape))
     print("scale=",scale_factor)
@@ -336,7 +312,7 @@ def process_camera_gst():
     # GStreamer pipeline string for CSI camera
     csi_pipeline=" ! ".join([
         "nvarguscamerasrc sensor-id=0",  # Adjust sensor-id if multiple cameras
-        "video/x-raw(memory:NVMM), width=(int)640, height=(int)640, format=(string)NV12, framerate=(fraction)30/1",
+        "video/x-raw(memory:NVMM), width=(int)1920, height=(int)1080, format=(string)NV12, framerate=(fraction)30/1",
         "nvvidconv",
         "video/x-raw, format=(string)BGRx",
         "videoconvert",
@@ -346,7 +322,7 @@ def process_camera_gst():
         
     # GStreamer pipeline string for USB camera    
     usb_pipeline=" ! ".join([
-        "v4l2src device=/dev/video0",
+        "v4l2src device=/dev/video0 ! video/x-raw, width=1920,height=1080",
         "videoconvert",
         "video/x-raw, format=(string)RGB", # Add `videoflip method=rotate-180` to rotate camera.
         "appsink name=sink emit-signals=true max-buffers=1 drop=true"
@@ -361,7 +337,7 @@ def process_camera_gst():
 
     # Main loop
     while 1:
-        sample = appsink.emit("try-pull-sample", 100*Gst.MSECOND)
+        sample = appsink.emit("try-pull-sample", 1000*Gst.MSECOND)
         if sample:
             buffer = sample.get_buffer()
             caps = sample.get_caps()
@@ -373,6 +349,8 @@ def process_camera_gst():
             if success:
                 frame_data = np.frombuffer(map_info.data, dtype=np.uint8)
                 frame = frame_data.reshape((height, width, 3))  # BGR format
+                # Now `frame` is a NumPy array (height, width, 3)
+                #print(f"Captured frame: {frame.shape}")
                 buffer.unmap(map_info)            
                 Image.fromarray(frame).convert('RGB').save("camera.png")
                 global img_width
@@ -393,8 +371,6 @@ def process_camera_gst():
                 print("crop_width=",crop_width)
                 frame_scaled=crop_and_scale_frame(frame,scale_factor,crop_width,crop_r,crop_c)
                 process_image(frame_scaled)                
-                # Now `frame` is a NumPy array (height, width, 3)
-                #print(f"Captured frame: {frame.shape}")
             else:
                 print("Buffer mapping failed.")
 
@@ -404,6 +380,7 @@ def process_camera_gst():
 
 img_width=-1
 img_height=-1
+crop_width=OUTPUT_RESOLUTION//scale_factor
 
 def main():
     listener = keyboard.Listener(on_press=on_press)
@@ -416,28 +393,29 @@ def main():
 
 def on_press(key):
     global scale_factor
-    global crop_r,crop_c
+    global crop_r,crop_c,crop_width
     global edge_threshold
+    step=crop_width//15
     
     # `up arrow` key moves the crop position up.
     if key==keyboard.Key.up:
         if crop_r>0:
-            crop_r-=20
+            crop_r-=step
             
     # `down arrow` key moves the crop position down.            
     if key==keyboard.Key.down:
         if crop_r<img_height:
-            crop_r+=20
+            crop_r+=step
             
     # `left arrow` key moves the crop position left.            
     if key==keyboard.Key.left:
         if crop_c>0:
-            crop_c-=20
+            crop_c-=step
             
     # `right arrow` key moves the crop position right.            
     if key==keyboard.Key.right:
         if crop_c<img_width:
-            crop_c+=20    
+            crop_c+=step  
             
     # `+` Plus key zooms in the crop
     if key==keyboard.KeyCode.from_char('+'):

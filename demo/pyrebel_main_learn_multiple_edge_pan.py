@@ -23,17 +23,18 @@ import numpy as np
 from PIL import Image,ImageDraw,ImageFont
 import math,argparse,time,os,itertools
 from pynput import keyboard
+import sys,termios
 from pyrebel.preprocess import Preprocess
 from pyrebel.abstract import Abstract
 from pyrebel.learn import Learn
 from pyrebel.edge import Edge
 from pyrebel.utils import *
-
+        
 parser=argparse.ArgumentParser()
 parser.add_argument("-t","--abs_threshold",help="Threshold of abstraction.")
 parser.add_argument("-l","--learn",help="Symbol to learn.")
 parser.add_argument("-r","--recognize",help="Recognize the signature.")
-
+parser.add_argument("-c","--camera",help="Learn/recognize camera.")
 parser.add_argument("-et","--edge_threshold",help="Threshold of edge detection.")
 parser.add_argument("-b","--block_threshold",help="Block threshold.")
 parser.add_argument("-p","--paint_threshold",help="Paint threshold.")
@@ -81,15 +82,76 @@ if args.output_resolution:
 else:
     OUTPUT_RESOLUTION=600   
 
-init_time=time.time()
-
+def on_press(key):
+    global scale_factor
+    global crop_r,crop_c,crop_width
+    global RESOLUTION_THRESHOLD
+    global edge_threshold
+    global learn
+    step=crop_width//15
+    
+    # `l` key turns on learning mode
+    if key==keyboard.KeyCode.from_char('l'):
+        learn=True
+        return False
+        
+    # `up arrow` key moves the crop position up.
+    if key==keyboard.Key.up:
+        if crop_r>0:
+            crop_r-=step
+            
+    # `down arrow` key moves the crop position down.
+    if key==keyboard.Key.down:
+        if crop_r<img_height:
+            crop_r+=step
+            
+    # `left arrow` key moves the crop position left.
+    if key==keyboard.Key.left:
+        if crop_c>0:
+            crop_c-=step
+            
+    # `right arrow` key moves the crop position right.
+    if key==keyboard.Key.right:
+        if crop_c<img_width:
+            crop_c+=step  
+            
+    # `+` Plus key zooms in the crop
+    if key==keyboard.KeyCode.from_char('+'):
+        if scale_factor<12:
+            scale_factor+=1
+            
+    # `-` Minus key zooms out the crop
+    if key==keyboard.KeyCode.from_char('-'):
+        if scale_factor>1:
+            scale_factor-=1
+            
+    # `t` Lowercase t increases `edge_threshold`
+    if key==keyboard.KeyCode.from_char('t'):
+        if edge_threshold<100:
+            edge_threshold+=5
+            
+    # `T` Uppercase T decreases `edge_threshold`
+    if key==keyboard.KeyCode.from_char('T'):
+        if edge_threshold>10:
+            edge_threshold-=5
+            
+    # `r` Lowercase r increases `RESOLUTION_THRESHOLD`
+    if key==keyboard.KeyCode.from_char('r'):
+        if RESOLUTION_THRESHOLD<0.25:
+            RESOLUTION_THRESHOLD+=0.02
+            
+    # `R` Uppercase R decreases `RESOLUTION_THRESHOLD`
+    if key==keyboard.KeyCode.from_char('R'):
+        if RESOLUTION_THRESHOLD>0.02:
+            RESOLUTION_THRESHOLD-=0.02
+    print("crop_r",crop_r,"crop_c",crop_c,"scale_factor",scale_factor,"res_threshold",RESOLUTION_THRESHOLD,"edge_threshold",edge_threshold)
 
 def learn_recognize(img_array,learn,sign_name=""):
     start_time=time.time()
     # Initialize the preprocessing class.
     pre=Preprocess(img_array)
     # Set the minimum and maximum size of boundaries of blobs in the image. Defaults to a minimum of 64.
-    pre.set_bound_size(300)    
+    pre.set_bound_size(600)    
     # Perform the preprocessing to get 1D array containing boundaries of blobs in the image.
     pre.preprocess_image()
     img_scaled=pre.get_image_scaled()
@@ -120,6 +182,7 @@ def learn_recognize(img_array,learn,sign_name=""):
     if len(bound_size)<3:
         print("No blobs found.")
         return
+
     # Select largest blob
     blob_index=np.argsort(bound_size[2:])[-1]+2
     print("blob_index=",blob_index)
@@ -150,7 +213,7 @@ def learn_recognize(img_array,learn,sign_name=""):
 
     #print(is_inside_h,n_blobs_inside)
     for blob_ins in range(len(is_inside_h)):
-        if not is_inside_h[blob_ins]:            
+        if is_inside_h[blob_ins]==1:            
             blob_index_data=bound_data[bound_size_i_cum[blob_ins]:bound_size_i_cum[blob_ins]+bound_size_i[blob_ins]]
             blob_index_data_d=cuda.to_device(blob_index_data)            
             draw_pixels_cuda(blob_index_data_d,250,out_image_d)
@@ -159,7 +222,12 @@ def learn_recognize(img_array,learn,sign_name=""):
     # Save the outer blob to disk.
     Image.fromarray(out_image_h).convert('RGB').save("inside.png")                    
     
-    
+    if learn:
+        if len(blob_indices)>1:
+            resume=input("Multiple blobs. Do you want to continue? (y/n) : ")
+            if resume.lower()=="n" or resume=="":
+                print("Skipping..")
+                return    
     # Initialize the abstraction class
     abs=Abstract(bound_data,len(bound_size),init_bound_abstract,scaled_shape,True,threshold_h)
     
@@ -440,10 +508,11 @@ def learn_input(learn_args):
             crop_r=-1
             crop_c=-1
         print("crop_width=",crop_width)
+        start_time=time.time()
         img_array_scaled=crop_and_scale_frame(img_array_rgb,scale_factor,crop_width,crop_r,crop_c)
         img_edges=process_image_edges(img_array_scaled)  
         learn_recognize(img_edges,True,sign_name)
-        
+        print("Finished in total of",time.time()-start_time,"seconds at",float(1/(time.time()-start_time)),"fps.")
         learn_n+=1
         if learn_n==ip_files_n:
             break
@@ -474,30 +543,7 @@ def recognize_input(recognize_args):
         learn_recognize(img_edges,False)
         print("Finished in total of",time.time()-start_time,"seconds at",float(1/(time.time()-start_time)),"fps.")  
         #break
-    
-def process_camera_jutils():
-    from jetson_utils import videoSource, videoOutput, Log
-    from jetson_utils import cudaAllocMapped,cudaConvertColor
-    from jetson_utils import cudaToNumpy,cudaDeviceSynchronize,cudaFromNumpy
-    def convert_color(img,output_format):
-        converted_img=cudaAllocMapped(width=img.width,height=img.height,
-                format=output_format)
-        cudaConvertColor(img,converted_img)
-        return converted_img
 
-    input_capture = videoSource("csi://0", options={'width':1920,'height':1080,'framerate':30,'flipMethod':'rotate-360'})
-    #output = videoOutput("", argv=sys.argv)
-    while 1:
-        input_capture.Capture()
-        img_array_rgb = input_capture.Capture()
-        if img_array_rgb is None: # timeout
-            print("No camera capture!")
-            continue  
-        img_rgb=cudaToNumpy(img_array_rgb)
-        cudaDeviceSynchronize()
-        img_array_scaled=scale_camera_frame(img_rgb,scale_factor)
-        process_image(img_array_scaled)  
-        
 def crop_and_scale_frame(img_array_rgb_orig,scale_factor=1,crop_width=-1,crop_r=-1,crop_c=-1):
     #scale_factor=int(2048/max(img_array_rgb_orig.shape))
     print("scale=",scale_factor)
@@ -522,17 +568,17 @@ def crop_and_scale_frame(img_array_rgb_orig,scale_factor=1,crop_width=-1,crop_r=
     img_array_rgb=np.array(img_array_rgb_i.resize((int(img_array_rgb_i.width*scale_factor),int(img_array_rgb_i.height*scale_factor)),Image.LANCZOS))
     return img_array_rgb
 
-def process_camera_gst(learn):
+def process_camera_gst():
     import gi
     gi.require_version('Gst', '1.0')
     from gi.repository import Gst
     # Initialize GStreamer
     Gst.init(None)
-
+    global learn
     # GStreamer pipeline string for CSI camera
     csi_pipeline=" ! ".join([
-        "nvarguscamerasrc sensor-id=0",  # Adjust sensor-id if multiple cameras
-        "video/x-raw(memory:NVMM), width=(int)1024, height=(int)1024, format=(string)NV12, framerate=(fraction)30/1",
+        "nvarguscamerasrc sensor-id=1",  # Adjust sensor-id if multiple cameras
+        "video/x-raw(memory:NVMM), width=(int)1920, height=(int)1024, format=(string)NV12, framerate=(fraction)30/1",
         "nvvidconv",
         "video/x-raw, format=(string)BGRx",
         "videoconvert",
@@ -542,7 +588,7 @@ def process_camera_gst(learn):
         
     # GStreamer pipeline string for USB camera
     usb_pipeline=" ! ".join([
-        "v4l2src device=/dev/video0",
+        "v4l2src device=/dev/video0 ! video/x-raw, width=1920,height=1080",
         "videoconvert",
         "video/x-raw, format=(string)RGB", # Add `videoflip method=rotate-180` to rotate camera.
         "appsink name=sink emit-signals=true max-buffers=1 drop=true"
@@ -557,7 +603,8 @@ def process_camera_gst(learn):
     time.sleep(3)
     # Main loop
     while 1:
-        sample = appsink.emit("try-pull-sample", 100*Gst.MSECOND)
+        start_time=time.time()
+        sample = appsink.emit("try-pull-sample", 1000*Gst.MSECOND)
         if sample:
             buffer = sample.get_buffer()
             caps = sample.get_caps()
@@ -569,13 +616,15 @@ def process_camera_gst(learn):
             if success:
                 frame_data = np.frombuffer(map_info.data, dtype=np.uint8)
                 frame = frame_data.reshape((height, width, 3))  # BGR format
+                # Now `frame` is a NumPy array (height, width, 3)
+                #print(f"Captured frame: {frame.shape}")
                 buffer.unmap(map_info)            
-                Image.fromarray(frame).convert('RGB').save("camera.png")
-                start_time=time.time()
+                Image.fromarray(frame).convert('RGB').save("camera.png")                
                 global img_width
                 global img_height
                 global scale_factor
-                global crop_r,crop_c
+                global crop_r,crop_c,crop_width
+                global learn,listener,sign_name
                 img_width=width
                 img_height=height
                 if crop_r==1.5:
@@ -586,10 +635,26 @@ def process_camera_gst(learn):
                 print("crop_width=",crop_width)
                 frame_scaled=crop_and_scale_frame(frame,scale_factor,crop_width,crop_r,crop_c)                                
                 img_edges=process_image_edges(frame_scaled)
-                learn_recognize(img_edges,learn)
-                print("Finished in total of",time.time()-start_time,"seconds at",float(1/(time.time()-start_time)),"fps.")
-                # Now `frame` is a NumPy array (height, width, 3)
-                #print(f"Captured frame: {frame.shape}")
+                if learn:
+                    termios.tcflush(sys.stdin, termios.TCIFLUSH)
+                    sign_name=input("Enter pattern name (blank to skip):")
+                    if sign_name=="":
+                        print("Skipping..")
+                        learn=False
+                        if not listener.is_alive():
+                            listener = keyboard.Listener(on_press=on_press)
+                            listener.start()
+                        print("Finished in total of",time.time()-start_time,"seconds at",float(1/(time.time()-start_time)),"fps.\n") 
+                        continue
+                    learn_recognize(img_edges,learn,sign_name)
+                    if not listener.is_alive():
+                            listener = keyboard.Listener(on_press=on_press)
+                            listener.start()
+                    learn=False
+                else:
+                    learn_recognize(img_edges,learn,sign_name)
+                    
+                print("Finished in total of",time.time()-start_time,"seconds at",float(1/(time.time()-start_time)),"fps.\n")                
             else:
                 print("Buffer mapping failed.")
 
@@ -600,62 +665,19 @@ def process_camera_gst(learn):
 img_width=-1
 img_height=-1
 RESOLUTION_THRESHOLD=0.05
-
-def main():
-    listener = keyboard.Listener(on_press=on_press)
-    listener.start()
+crop_width=OUTPUT_RESOLUTION//scale_factor
+listener = keyboard.Listener(on_press=on_press)
+listener.start()
+learn=False
+sign_name=""
     
-    if args.learn=="camera":
-        process_camera_gst(True)
+def main():
+    if args.camera:
+        process_camera_gst()
     if args.learn:
         learn_input(args.learn)
-        
-    if args.recognize=="camera":
-        process_camera_gst(False)
     if args.recognize:
         recognize_input(args.recognize)
-            
-def on_press(key):
-    global scale_factor
-    global crop_r,crop_c
-    global RESOLUTION_THRESHOLD
-    global edge_threshold
-    
-    if key==keyboard.Key.up:
-        if crop_r>0:
-            crop_r-=20
-    if key==keyboard.Key.down:
-        if crop_r<img_height:
-            crop_r+=20
-    if key==keyboard.Key.left:
-        if crop_c>0:
-            crop_c-=20
-    if key==keyboard.Key.right:
-        if crop_c<img_width:
-            crop_c+=20    
-    if key==keyboard.KeyCode.from_char('+'):
-        if scale_factor<12:
-            scale_factor+=1
-    if key==keyboard.KeyCode.from_char('-'):
-        if scale_factor>1:
-            scale_factor-=1
-    # `t` Lowercase t increases `edge_threshold`
-    if key==keyboard.KeyCode.from_char('t'):
-        if edge_threshold<100:
-            edge_threshold+=5
-    
-    # `T` Uppercase T decreases `edge_threshold`
-    if key==keyboard.KeyCode.from_char('T'):
-        if edge_threshold>10:
-            edge_threshold-=5
-            
-    if key==keyboard.KeyCode.from_char('r'):
-        if RESOLUTION_THRESHOLD<0.25:
-            RESOLUTION_THRESHOLD+=0.02
-    if key==keyboard.KeyCode.from_char('R'):
-        if RESOLUTION_THRESHOLD>0.02:
-            RESOLUTION_THRESHOLD-=0.02
-    print("crop_r",crop_r,"crop_c",crop_c,"scale_factor",scale_factor,"res_threshold",RESOLUTION_THRESHOLD,"edge_threshold",edge_threshold)
-    
+        
 if __name__ == '__main__':
     main()
