@@ -168,7 +168,7 @@ while 1:
     top_n=-1 # `top_n=-1` for symbol with most weight. `top_n=n` for top n symbols.
     if args.recognize:
         rt=time.time()
-        recognized=l.recognize_sym(blob_indices,top_n,"image")
+        recognized=l.recognize_sym(blob_indices,top_n,"image",memory=5)
         print("symbols found=")
         for i in recognized[0]:
             print(i)

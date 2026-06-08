@@ -118,12 +118,12 @@ def on_press(key):
     # `+` Plus key zooms in the crop
     if key==keyboard.KeyCode.from_char('+'):
         if scale_factor<12:
-            scale_factor+=1
+            scale_factor+=0.5
             
     # `-` Minus key zooms out the crop
     if key==keyboard.KeyCode.from_char('-'):
         if scale_factor>1:
-            scale_factor-=1
+            scale_factor-=0.5
             
     # `t` Lowercase t increases `edge_threshold`
     if key==keyboard.KeyCode.from_char('t'):
@@ -255,8 +255,8 @@ def learn_recognize(img_array,learn,sign_name=""):
     top_n=-1
     if not learn:
         rt=time.time()
-        print(blob_indices)
-        recognized=l.recognize_sym(blob_indices,top_n,"image")
+        #print(blob_indices)
+        recognized=l.recognize_sym(blob_indices,top_n,"image",memory=5)
         print("symbols found=")
         if recognized==None or len(recognized)==0:
             return
@@ -577,7 +577,7 @@ def process_camera_gst():
     global learn
     # GStreamer pipeline string for CSI camera
     csi_pipeline=" ! ".join([
-        "nvarguscamerasrc sensor-id=1",  # Adjust sensor-id if multiple cameras
+        "nvarguscamerasrc sensor-id=0 tnr-mode=2 tnr-strength=1.0",  # Adjust sensor-id if multiple cameras
         "video/x-raw(memory:NVMM), width=(int)1920, height=(int)1024, format=(string)NV12, framerate=(fraction)30/1",
         "nvvidconv",
         "video/x-raw, format=(string)BGRx",

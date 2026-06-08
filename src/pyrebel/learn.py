@@ -220,6 +220,79 @@ class Learn:
                         continue
                     if cur_sign in self.know_base:
                         if channel in self.know_base[cur_sign]:
+                            if "concrete" in self.know_base[cur_sign][channel]:
+                                if sign_name in self.know_base[cur_sign][channel]["concrete"]:
+                                    self.know_base[cur_sign][channel]["concrete"][sign_name]+=1
+                                else:
+                                    self.know_base[cur_sign][channel]["concrete"][sign_name]=1
+                                    learned_signs.append(cur_sign)
+                                    n+=1 
+                            else:
+                                self.know_base[cur_sign][channel]["concrete"]={sign_name:1}
+                        else:
+                            self.know_base[cur_sign][channel]={"concrete":{sign_name:1}}
+                            learned_signs.append(cur_sign)
+                            n+=1 
+                    else:
+                        self.know_base[cur_sign]={channel:{"concrete":{sign_name:1}}}
+                        learned_signs.append(cur_sign) 
+                        n+=1
+                    if len(cur_sign)>max_sign_len:
+                        max_sign_len=len(cur_sign)
+                        
+                if sign_name in self.know_base:
+                    if max_sign_len>self.know_base[sign_name]['max_len']:
+                        self.know_base[sign_name]['max_len']=max_sign_len
+                else:
+                    self.know_base[sign_name]={'max_len':max_sign_len}
+        else:
+            print("Multiple blobs.")
+            blobs_indices=blobs_i
+            for blob_i in range(len(blobs_indices)):
+                max_sign_len=0
+                for sign_i in range(self.count_cum[blobs_indices[blob_i]],self.count_cum[blobs_indices[blob_i]]+self.count_h[blobs_indices[blob_i]]):
+                    cur_sign=self.nz_ba_sign_array2_str_signs[sign_i]
+                    if len(cur_sign)==0:
+                        continue
+                    if cur_sign in self.know_base:
+                        if channel in self.know_base[cur_sign]:
+                            if "abstract" in self.know_base[cur_sign][channel]:
+                                if sign_name in self.know_base[cur_sign][channel]["abstract"]:
+                                    self.know_base[cur_sign][channel]["abstract"][sign_name]+=1
+                                else:
+                                    self.know_base[cur_sign][channel]["abstract"][sign_name]=1
+                                    learned_signs.append(cur_sign)
+                                    n+=1 
+                            else:
+                                self.know_base[cur_sign][channel]["abstract"]={sign_name:1}
+                        else:
+                            self.know_base[cur_sign][channel]={"abstract":{sign_name:1}}
+                            learned_signs.append(cur_sign)
+                            n+=1 
+                    else:
+                        self.know_base[cur_sign]={channel:{"abstract":{sign_name:1}}}
+                        learned_signs.append(cur_sign) 
+                        n+=1
+
+        return learned_signs    
+
+    def learn_sym3(self,blobs_i,sign_name,channel,memory=1):        
+        n=0
+        learned_signs=list()
+
+        if len(blobs_i)==0:
+            return [] 
+        elif len(blobs_i)==1:
+            print("Single blob.")
+            blobs_indices=blobs_i
+            for blob_i in range(len(blobs_indices)):
+                max_sign_len=0
+                for sign_i in range(self.count_cum[blobs_indices[blob_i]],self.count_cum[blobs_indices[blob_i]]+self.count_h[blobs_indices[blob_i]]):
+                    cur_sign=self.nz_ba_sign_array2_str_signs[sign_i]
+                    if len(cur_sign)==0:
+                        continue
+                    if cur_sign in self.know_base:
+                        if channel in self.know_base[cur_sign]:
                             if sign_name in self.know_base[cur_sign][channel]:
                                 self.know_base[cur_sign][channel][sign_name]+=1
                             else:
@@ -438,8 +511,60 @@ class Learn:
         return self.ba_sign_array_h
     def get_sign_array(self):
         return self.ba_sign_array2_h
-    
+
     def recognize_sym(self,blobs_i,top_n,channel,memory=1):
+        recognized_abstract=list()
+        blob_i_counter=list()
+        if len(blobs_i)==0:
+            return []         
+        else:
+            blobs_indices=blobs_i
+            for blob_i in range(len(blobs_indices)):
+                recognized_concrete=list()
+                blob_i_counter.append(list())
+                found_layer_con=np.zeros(self.layer_n,dtype=np.int32)
+                found_layer_abs=np.zeros(self.layer_n,dtype=np.int32)
+                max_sign_len=0
+                for sign_i in range(self.count_cum[blobs_indices[blob_i]],self.count_cum[blobs_indices[blob_i]]+self.count_h[blobs_indices[blob_i]]):
+                    cur_sign=self.nz_ba_sign_array2_str_signs[sign_i]
+                    if cur_sign in self.know_base:
+                        if channel in self.know_base[cur_sign]:
+                            if "concrete" in self.know_base[cur_sign][channel]:                                
+                                if found_layer_con[len(cur_sign)-1]==0:
+                                    symbol_recognized=self.know_base[cur_sign][channel]["concrete"].keys()
+                                    recognized_concrete+=symbol_recognized
+                                    found_layer_con[len(cur_sign)-1]+=1
+                                    if len(cur_sign)>max_sign_len:
+                                        max_sign_len=len(cur_sign)
+                            if "abstract" in self.know_base[cur_sign][channel]:                            
+                                if found_layer_abs[len(cur_sign)-1]==0:
+                                    symbol_recognized=self.know_base[cur_sign][channel]["abstract"].keys()
+                                    recognized_abstract+=symbol_recognized
+                                    found_layer_abs[len(cur_sign)-1]+=1
+                            
+                recognized_concrete_ordered=Counter(recognized_concrete).most_common()
+                if top_n==-1:
+                    if len(recognized_concrete_ordered)==0:
+                        continue
+                    most_count=recognized_concrete_ordered[0][1]
+                    most_sym=recognized_concrete_ordered[0][0]
+                    weight_diff_min=np.inf
+                    for r in recognized_concrete_ordered:
+                        if r[1]!=most_count:
+                            break
+                        weight_diff=abs(max_sign_len-self.know_base[r[0]]['max_len'])
+                        if weight_diff<weight_diff_min:
+                            weight_diff_min=weight_diff
+                            most_sym=r[0]                  
+                            most_count=r[1] 
+                    blob_i_counter[blob_i]=[(most_sym,most_count)]
+                else:
+                    blob_i_counter[blob_i]=recognized_concrete_ordered[:top_n]          
+                    
+            recognized_abstract_ordered=Counter(recognized_abstract).most_common(memory)            
+            return [blob_i_counter,recognized_abstract_ordered]
+
+    def recognize_sym3(self,blobs_i,top_n,channel,memory=1):
         recognized=list()
         blob_i_counter=list()
         blob_i_counter_new=list()
