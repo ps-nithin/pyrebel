@@ -194,7 +194,7 @@ class Abstract:
             self.layer_count=2
  
         self.nz_ba=get_non_zeros(bound_abstract_h)
-        self.ba_sign=[]
+        self.ba_sign_h=np.zeros([len(self.nz_ba)],dtype=np.int32)
         
     def do_abstract_all(self,ba_threshold=-1):
         """Finds all layers of abstraction."""
@@ -344,7 +344,7 @@ class Abstract:
             self.layer_count=2
         self.bound_abstract_h=self.init_bound_abstract_h
         self.nz_ba=get_non_zeros(self.init_bound_abstract_h)
-        self.ba_sign_h=[]
+        self.ba_sign_h=np.zeros([len(self.nz_ba)],dtype=np.int32)
         
     def get_abstract(self):
         """Returns the current layer of abstraction."""

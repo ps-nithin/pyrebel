@@ -64,7 +64,7 @@ else:
 if args.scale_factor:
     scale_factor=int(args.scale_factor)
 else:
-    scale_factor=2
+    scale_factor=1
 if args.crop_width:
     crop_width=int(args.crop_width)
 else:
@@ -233,12 +233,11 @@ def learn_recognize(img_array,learn,sign_name=""):
     
     n_layers=30
     # Initialize learning class
-    l=Learn(n_layers,len(bound_size),3)
+    l=Learn(n_layers,len(bound_size))
     print("len(know_base)=",len(l.get_know_base()))
+    is_finished_abs=False
     fst=time.time()
-    while 1:
-        # Do one layer of abstraction
-        is_finished_abs=abs.do_abstract_one()
+    while 1:        
         ba_sign=abs.get_sign()
         ba_size=abs.get_abstract_size()
         
@@ -249,7 +248,9 @@ def learn_recognize(img_array,learn,sign_name=""):
             l.init_signatures()
             print("init signatures in",time.time()-ist)        
             break
-            
+        # Do one layer of abstraction
+        is_finished_abs=abs.do_abstract_one()
+        
     print("found signatures in",time.time()-fst)
     
     top_n=-1
@@ -266,7 +267,7 @@ def learn_recognize(img_array,learn,sign_name=""):
         print("recognize time=",time.time()-rt)
         draw_image=Image.fromarray(img_scaled).convert('RGB')
         draw = ImageDraw.Draw(draw_image)
-        text_color=(255,255,0)
+        text_color=(255,0,0)
         font=ImageFont.load_default(size=30)
         for i,blob_i in enumerate(blob_indices):
             if len(list(itertools.chain.from_iterable(recognized[0][i])))==0:

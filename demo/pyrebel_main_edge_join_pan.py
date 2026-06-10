@@ -420,12 +420,12 @@ def on_press(key):
     # `+` Plus key zooms in the crop
     if key==keyboard.KeyCode.from_char('+'):
         if scale_factor<12:
-            scale_factor+=1
+            scale_factor+=0.5
             
     # `-` Plus key zooms out the crop            
     if key==keyboard.KeyCode.from_char('-'):
         if scale_factor>1:
-            scale_factor-=1
+            scale_factor-=0.5
     
     # `t` Lowercase t increases `edge_threshold`
     if key==keyboard.KeyCode.from_char('t'):

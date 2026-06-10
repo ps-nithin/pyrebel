@@ -96,7 +96,7 @@ def find_signatures_cuda(ba_sign_d,nz_ba_size_d,nz_ba_size_cum_d,ba_sign_array_d
         for i in range(nz_ba_size_d[ci]-1):
             n=nz_ba_size_cum_d[ci]+i
             #k1=int(4*(nz_ba_size_d[ci]-1)*(nz_ba_size_d[ci]-1-1)/2-4*3)
-            k1=int(4*(cur_layer)*(cur_layer-1)/2-4*3)
+            k1=int(4*(cur_layer)*(cur_layer-1)/2-4*1)
             #k2=int(4*(nz_ba_size_d[ci]-1)*(nz_ba_size_d[ci]-1+1)/2-4*3)
             n_first=n
             if n_first==nz_ba_size_cum_d[ci]:
@@ -130,11 +130,11 @@ def find_signatures_cuda(ba_sign_d,nz_ba_size_d,nz_ba_size_cum_d,ba_sign_array_d
                 s+=1
 
 class Learn:
-    def __init__(self,layer_n,n_blobs,next_layer):
+    def __init__(self,layer_n,n_blobs):
         self.cur_sign_list_dict={}
         self.n_blobs=n_blobs
         self.layer_n=layer_n
-        self.next_layer=next_layer
+        self.next_layer=2
         if not os.path.exists('know_base.pkl'):
             fp=open('know_base.pkl','x')
             fp.close()
@@ -143,14 +143,14 @@ class Learn:
                 self.know_base=pickle.load(fpr)
             except EOFError:
                 self.know_base={}
-        self.ba_sign_array2_h=np.full([n_blobs,int(((layer_n*(layer_n+1)/2)-3)*4),layer_n],2,dtype=np.int8)
+        self.ba_sign_array2_h=np.full([n_blobs,int(((layer_n*(layer_n+1)/2)-1)*4),layer_n],2,dtype=np.int8)
         self.ba_sign_array_h=np.zeros([n_blobs,int(((layer_n*(layer_n+1)/2)-3)*4),layer_n+2],dtype=np.int64)
         self.nz_ba_sign_array2_str_signs=[]
         self.count_cum=[]
         self.count_h=[]
 
     def init_signatures(self):
-        ba_sign_array2_d=cuda.to_device(self.ba_sign_array2_h)
+        ba_sign_array2_d=cuda.to_device(self.ba_sign_array2_h)        
         mask=run_cuda_duplicate_detection_large(self.ba_sign_array2_h)
         count=np.zeros(len(self.ba_sign_array2_h),dtype=np.int32)
         count_d=cuda.to_device(count)

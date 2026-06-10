@@ -146,12 +146,11 @@ while 1:
     
     n_layers=30
     # Initialize learning class
-    l=Learn(n_layers,len(bound_size),3)
+    l=Learn(n_layers,len(bound_size))
     print("len(know_base)=",len(l.get_know_base()))
+    is_finished_abs=False
     fst=time.time()
-    while 1:
-        # Do one layer of abstraction
-        is_finished_abs=abs.do_abstract_one()
+    while 1:        
         ba_sign=abs.get_sign()
         ba_size=abs.get_abstract_size()
         
@@ -162,6 +161,8 @@ while 1:
             l.init_signatures()
             print("init signatures in",time.time()-ist)        
             break
+        # Do one layer of abstraction
+        is_finished_abs=abs.do_abstract_one()
             
     print("found signatures in",time.time()-fst)
     

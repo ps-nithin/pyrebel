@@ -81,10 +81,10 @@ while 1:
     abs=Abstract(bound_data,len(bound_size),init_bound_abstract,scaled_shape,True,threshold_h)
     
     max_layers=20
-    c=3
+    c=2
+    is_finished=False
     # Get the abstract points
     while 1:
-        is_finished=abs.do_abstract_one()
         if is_finished or c==max_layers+1:
             print("layer",c-1,"/",max_layers,end='\r')
             print()
@@ -103,7 +103,7 @@ while 1:
 
         # Draw the boundaries to the output image.
         draw_pixels_cuda(bound_data_d,50,out_image_d)
-        draw_lines[len(abs_draw),1](abs_draw_d,abs_size_d,bound_data_d,bound_mark_d,out_image_d,100,3)
+        draw_lines[len(abs_draw),1](abs_draw_d,abs_size_d,bound_data_d,bound_mark_d,out_image_d,100,2)
         cuda.synchronize()
         
         # Draw the abstract points to the output image.
@@ -113,6 +113,7 @@ while 1:
         # Save the output to disk.
         Image.fromarray(out_image_h).convert('RGB').save("layer-"+str(c)+".png")        
         c+=1
+        is_finished=abs.do_abstract_one()
     
     print("Finished in total of",time.time()-start_time,"seconds at",float(1/(time.time()-start_time)),"fps.")
     break
