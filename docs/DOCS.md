@@ -17,12 +17,16 @@ Pyrebel is a pure python library that implements abstraction of data.
 
     1. ba_threshold - (Optional) Overrides the threshold of abstraction passed to `__init__`
     
-    Returns 1D array containing indices of abstract points of all the layers of abstraction of boundaries of blobs in the image. 
+    Finds abstract points of all the layers of abstraction of boundaries of blobs in the image. 
 
 `do_abstract_one(self)`
 
-    Returns 1D array containing indices of abstract points of another layer of abstraction of boundaries of blobs in the image. 
+    Finds abstract points of another layer of abstraction of boundaries of blobs in the image. 
 
+`get_abstract(self)`
+
+    Returns 1D array of the abstract points upto the current layer of abstraction.
+        
 `get_sign(self)`
 
     Returns 1D array containing -1 or 1 depending on the convexity of the abstract point.
