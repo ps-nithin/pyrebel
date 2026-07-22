@@ -11,7 +11,7 @@ Pyrebel is a pure python library that implements abstraction of data.
     3. bound_abstract_h - 1D array having the same length as bound_data_ordered_h containing indices of initial abstract points.
     4. shape_h - Shape of the 2D image.
     5. is_closed - True for 2D images with closed boundaries and False for discrete data sets.
-    6. threshold_h - 1D array of threshold of abstraction for each blob.
+    6. threshold_h - (Optional, if threshold is passed to `do_abstract_all` or `do_abstract_one`) 1D array of threshold of abstraction for each blob.
 
 `do_abstract_all(self,ba_threshold=-1)`
 
@@ -19,8 +19,10 @@ Pyrebel is a pure python library that implements abstraction of data.
     
     Finds abstract points of all the layers of abstraction of boundaries of blobs in the image. 
 
-`do_abstract_one(self)`
+`do_abstract_one(self,ba_threshold=-1)`
 
+    1. ba_threshold - (Optional) Overrides the threshold of abstraction passed to `__init__`
+    
     Finds abstract points of another layer of abstraction of boundaries of blobs in the image. 
 
 `get_abstract(self)`
